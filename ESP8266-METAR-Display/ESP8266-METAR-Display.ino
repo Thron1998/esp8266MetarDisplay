@@ -1,21 +1,28 @@
+// Combined url: www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString=EHLE
+
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
+
+// Function declaration
+void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
 
 #define SERVER "www.aviationweather.gov"
 #define BASE_URI "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString="
 #define HTTPSPORT 443
-
-// Combined url: www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString=EHLE
-
-//const char* nwsServer = "https://tgftp.nsw.noaa.gov";
-//const char* metarHostEHLE = "https://tgftp.nws.noaa.gov/data/observations/metar/stations/EHLE.TXT";
-//const char* fingerprint = "4179182b809f3ba376cba6ec069d44bee7b4f0ba";
-
+#define OLED_RESET 1
 
 const char* ssid = "mesh_21";
 const char* pass = "ap69ju71ju98de00ap05";
 
 WiFiClientSecure client;
+Adafruit_SSD1306 display(OLED_RESET);
+
+#if(SSD1306_LCDHEIGHT != 64)
+#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#endif
 
 void setup() {
   Serial.begin(115200);
@@ -33,17 +40,64 @@ void setup() {
 
   Serial.print("IP addres: ");
   Serial.println(WiFi.localIP());
+  digitalWrite(LED_BUILTIN, LOW);
+
+  Wire.begin(2, 0); // Set I2C pins (SDA = GPIO2, SCL = GPIO0), default clock 100kHz
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  display.display();
 }
 
 void loop() {
-  WiFiClientSecure client;
-  String airportString = "EHLE";
+  char metar[500], condition[6];
+  int i = 0;
+  
+  getMetarInfo("EHLE", metar, condition);
+
+  i = 0;
+  Serial.print('\n');
+  while(i < sizeof(metar) || metar[i] != '\0') {
+    Serial.print(metar[i]);
+
+    if(metar[i] == '\0') {
+      break;
+    }
+
+    i++;
+  }
+
+  i = 0;
+  Serial.print('\n');
+  while(i < sizeof(condition) || condition[i] != '\0') {
+    Serial.print(condition[i]);
+    
+    if(condition[i] == '\0') {
+      break;
+    }
+
+    i++;
+  }
+
+  delay(2000);
+}
+
+void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
+  const char* airportString = airportCode;
+  char c;
+
+  String currentCondition = "";
+  String currentMetarRaw = "";
+  String currentLine = "";
+      
+  boolean readingCondition = false;
+  boolean readingMetarRaw = false;  
 
   client.setInsecure();
   Serial.println("Starting connection to server...");
   if(!client.connect(SERVER, HTTPSPORT)) {
     Serial.println("Connection failed");
+    // Handle failed connection
   } else {
+    // Make a HTTP request, and print it to console:
     Serial.println("Connected ...");
     Serial.print("GET ");
     Serial.print(BASE_URI);
@@ -54,7 +108,7 @@ void loop() {
     Serial.println("User-Agent: LED Map Client");
     Serial.println("Connection: close");
     Serial.println();
-    // Make a HTTP request, and print it to console:
+  
     client.print("GET ");
     client.print(BASE_URI);
     client.print(airportString);
@@ -66,24 +120,6 @@ void loop() {
     client.println();
     client.flush();
 
-    char c;
-
-    String currentAirport = "";
-    String currentCondition = "";
-    String currentLine = "";
-    String currentWind = "";
-    String currentGusts = "";
-    String currentWxstring = "";
-    String currentMetarRaw = "";
-    String airportString = "";
-      
-    boolean readingAirport = false;
-    boolean readingCondition = false;
-    boolean readingWind = false;
-    boolean readingGusts = false;
-    boolean readingWxstring = false;
-    boolean readingMetarRaw = false;
-
     while(client.connected()) {
       c = client.read();
       if (c >= 0) {
@@ -91,13 +127,23 @@ void loop() {
         currentLine += c;
         if (c == '\n') currentLine = "";
 
-        if(currentLine.endsWith("<raw_text>")) {
+        if (currentLine.endsWith("<raw_text>")) {
           readingMetarRaw = true;
         } else if (readingMetarRaw) {
-          if(!currentLine.endsWith("<")) {
+          if (!currentLine.endsWith("<")) {
             currentMetarRaw += c; 
           } else {
+            currentMetarRaw += '\0';
             readingMetarRaw = false;
+          }
+        } else if (currentLine.endsWith("<flight_category>")) {
+          readingCondition = true;
+        } else if (readingCondition) {
+          if (!currentLine.endsWith("<")) {
+            currentCondition += c;
+          } else {
+            currentCondition += '\0';
+            readingCondition = false;
           }
         }
       }
@@ -106,10 +152,12 @@ void loop() {
     // Debug values
     Serial.println("Received values");
     Serial.println("Raw metar: " + currentMetarRaw);
+    Serial.println("Flight conditions: " + currentCondition);
 
-    delay(5000);
-    
-  }
+    // Save results
+    strcpy(metarResult, currentMetarRaw.c_str());
+    strcpy(conditionResult, currentCondition.c_str());    
+  }  
 }
 
 /*
