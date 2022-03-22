@@ -1,6 +1,12 @@
 // Combined url: www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString=EHLE
+// http://oleddisplay.squix.ch/#/home
+
+// max 44 characters
+
 #include "main.h"
 #include "errorCodes.h"
+
+#define HOME_BASE_AIRPORT "EHLE"
 
 void setup() {
   setupOled();
@@ -16,13 +22,14 @@ void setup() {
 void loop() {
   char metar[500], condition[6];
     
-  getMetarInfo("EHLE", metar, condition);
+  getMetarInfo(HOME_BASE_AIRPORT, metar, condition);
 
-  displayMetarInfo("EHLE", metar, condition);
-  printMetarInfoDebug("EHLE", metar, condition);
+  displayMetarInfo(HOME_BASE_AIRPORT, metar, condition);
+  printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition);
 
-  delay(2000);
+  delay(DATA_REFRESH_DELAY);
 }
+
 
 void displayIpAddress() {
   oledDisplay.clearDisplay();
@@ -135,11 +142,15 @@ void setupOled() {
   Wire.begin(SDA_PIN,SCL_PIN);
   oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
 
-  // Set display standards
-  oledDisplay.setTextSize(1);
-  oledDisplay.setTextColor(WHITE);
+  setOledSettings();
   
   oledDisplay.display();  
+}
+
+void setOledSettings() {
+  // Set display standards
+  oledDisplay.setFont(&Dialog_plain_9);
+  oledDisplay.setTextColor(WHITE);
 }
 
 uint8_t setupWifi() {

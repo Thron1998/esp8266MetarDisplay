@@ -1,6 +1,8 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Fonts/TomThumb.h>
+#include "font.h"
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 
@@ -9,6 +11,7 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult);
 void setupOled();
+void setOledSettings();
 uint8_t setupWifi();
 void displayIpAddress();
 
@@ -17,6 +20,7 @@ void displayIpAddress();
 #define BASE_URI "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString="
 #define HTTPSPORT 443
 #define DISPLAY_IP_ADDR_DELAY 5000
+#define DATA_REFRESH_DELAY 10000
 
 // Oled definitions
 #define SCREEN_WIDTH 128
