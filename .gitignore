@@ -30,3 +30,4 @@
 *.exe
 *.out
 *.app
+ESP8266-METAR-Display/wifiCreds.h

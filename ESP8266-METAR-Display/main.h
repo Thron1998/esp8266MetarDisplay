@@ -1,10 +1,10 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <Fonts/TomThumb.h>
 #include "font.h"
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
+#include "wifiCreds.h"
 
 // Function declaration
 void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
@@ -29,10 +29,6 @@ void displayIpAddress();
 #define OLED_ADDR 0x3C
 #define SCL_PIN 0
 #define SDA_PIN 2
-
-// Wifi credentials
-const char* ssid = "mesh_21";
-const char* pass = "ap69ju71ju98de00ap05";
 
 // Wifi object
 WiFiClientSecure client;
