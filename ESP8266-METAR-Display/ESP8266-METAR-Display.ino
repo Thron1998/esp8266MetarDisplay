@@ -45,7 +45,8 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 
   oledDisplay.setCursor(0,0);
   oledDisplay.println(airportCode);
-  oledDisplay.print("Metar text");
+  oledDisplay.print(String(metarResult));
+//  oledDisplay.print(String(conditionResult));
 
   oledDisplay.display();
 }
