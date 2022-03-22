@@ -1,83 +1,53 @@
 // Combined url: www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString=EHLE
-
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#include <ESP8266WiFi.h>
-#include <WiFiClientSecure.h>
-
-// Function declaration
-void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
-
-#define SERVER "www.aviationweather.gov"
-#define BASE_URI "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString="
-#define HTTPSPORT 443
-#define OLED_RESET 1
-
-const char* ssid = "mesh_21";
-const char* pass = "ap69ju71ju98de00ap05";
-
-WiFiClientSecure client;
-Adafruit_SSD1306 display(OLED_RESET);
-
-#if(SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
+#include "main.h"
+#include "errorCodes.h"
 
 void setup() {
+  setupOled();
+  delay(100);
+ 
   Serial.begin(115200);
 
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
+  setupWifi();
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, pass);
-
-  while(WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.print("IP addres: ");
-  Serial.println(WiFi.localIP());
-  digitalWrite(LED_BUILTIN, LOW);
-
-  Wire.begin(2, 0); // Set I2C pins (SDA = GPIO2, SCL = GPIO0), default clock 100kHz
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
-  display.display();
+  displayIpAddress(); 
 }
 
 void loop() {
   char metar[500], condition[6];
-  int i = 0;
-  
+    
   getMetarInfo("EHLE", metar, condition);
 
-  i = 0;
-  Serial.print('\n');
-  while(i < sizeof(metar) || metar[i] != '\0') {
-    Serial.print(metar[i]);
-
-    if(metar[i] == '\0') {
-      break;
-    }
-
-    i++;
-  }
-
-  i = 0;
-  Serial.print('\n');
-  while(i < sizeof(condition) || condition[i] != '\0') {
-    Serial.print(condition[i]);
-    
-    if(condition[i] == '\0') {
-      break;
-    }
-
-    i++;
-  }
+  displayMetarInfo("EHLE", metar, condition);
+  printMetarInfoDebug("EHLE", metar, condition);
 
   delay(2000);
+}
+
+void displayIpAddress() {
+  oledDisplay.clearDisplay();
+  
+  oledDisplay.setCursor(0, 0);
+  oledDisplay.println(WiFi.localIP());
+  oledDisplay.display();
+  delay(DISPLAY_IP_ADDR_DELAY);
+
+  oledDisplay.clearDisplay();
+  oledDisplay.display();
+  
+  // Debug
+  Serial.print("IP addres: ");
+  Serial.println(WiFi.localIP());
+}
+
+void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
+  oledDisplay.clearDisplay();
+
+  oledDisplay.setCursor(0,0);
+  oledDisplay.println(airportCode);
+  oledDisplay.print("Metar text");
+
+  oledDisplay.display();
 }
 
 void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
@@ -160,77 +130,53 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
   }  
 }
 
-/*
-void loop() {
-  WiFiClientSecure client;
-  String airportString = "EHLE";
-  String currentLine = "";
-  bool readingMetar = false;
-  String metarMessage = "";
+void setupOled() {
+  Wire.begin(SDA_PIN,SCL_PIN);
+  oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+
+  // Set display standards
+  oledDisplay.setTextSize(1);
+  oledDisplay.setTextColor(WHITE);
   
-  client.setInsecure();
-
-  Serial.println("Starting connection to server...");
-  if(!client.connect(SERVER, HTTPSPORT)) {
-    Serial.println("Connection failed");
-  } else {
-    Serial.println("Connected ...");
-    Serial.print("GET ");
-    Serial.print(BASE_URI);
-    Serial.print(airportString);
-    Serial.println(" HTTP/1.1");
-    Serial.print("Host: ");
-    Serial.println(SERVER);
-    Serial.println("User-Agent: LED Map Client");
-    Serial.println("Connection: close");
-    Serial.println();
-    // Make a HTTP request, and print it to console:
-    client.print("GET ");
-    client.print(BASE_URI);
-    client.print(airportString);
-    client.println(" HTTP/1.1");
-    client.print("Host: ");
-    client.println(SERVER);
-    client.println("User-Agent: LED Sectional Client");
-    client.println("Connection: close");
-    client.println();
-    client.flush();
-
-    // ---------------
-    // -- Grab data --
-    // ---------------
-    
-    char c;
-    while(client.connected()) {
-      c = client.read();
-      
-      if (c >= 0) {
-        yield();
-        currentLine += c;
-
-        if(c == '\n') {
-          currentLine = "";
-        }
-
-        if(currentLine.endsWith("<raw_text>")) { // Start indiciation for raw metar information
-          readingMetar = true;
-        } else if (readingMetar) {
-          if(!currentLine.endsWith("<")) {
-            metarMessage += c;
-          } else {
-            readingMetar = false;
-          }
-        }
-        
-      } // End of message
-
-      
-      Serial.println("Received metar message: ");
-      Serial.println(metarMessage);
-      client.stop(); // Kill connection
-    }
-  }
-  
-  delay(5000);
+  oledDisplay.display();  
 }
-*/
+
+uint8_t setupWifi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, pass);
+
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  return WiFi.status(); // Return status after setup
+}
+
+void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult) {
+  int i;
+  
+  i = 0;
+  Serial.print('\n');
+  while(i < sizeof(metarResult) || metarResult[i] != '\0') {
+    Serial.print(metarResult[i]);
+
+    if(metarResult[i] == '\0') {
+      break;
+    }
+
+    i++;
+  }
+
+  i = 0;
+  Serial.print('\n');
+  while(i < sizeof(conditionResult) || conditionResult[i] != '\0') {
+    Serial.print(conditionResult[i]);
+    
+    if(conditionResult[i] == '\0') {
+      break;
+    }
+
+    i++;
+  }  
+}
