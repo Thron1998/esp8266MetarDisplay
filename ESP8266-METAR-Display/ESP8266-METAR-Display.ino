@@ -51,9 +51,12 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
   oledDisplay.clearDisplay();
 
   oledDisplay.setCursor(0,0);
-  oledDisplay.println(airportCode);
+  oledDisplay.print(airportCode);
+  oledDisplay.print(" ");
+  oledDisplay.println(String(conditionResult));
+
+  // Print metar results
   oledDisplay.print(String(metarResult));
-//  oledDisplay.print(String(conditionResult));
 
   oledDisplay.display();
 }
