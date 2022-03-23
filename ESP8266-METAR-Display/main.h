@@ -13,6 +13,7 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
 void setupOled();
 void setOledSettings();
 uint8_t setupWifi();
+void displayStartupScreen();
 void displayIpAddress();
 
 // Server definitions
