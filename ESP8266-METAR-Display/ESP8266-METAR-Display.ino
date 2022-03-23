@@ -1,7 +1,7 @@
 // Combined url: www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString=EHLE
 // http://oleddisplay.squix.ch/#/home
 
-// max 44 characters
+// max 44 characters (* 2 so 88 characters max from top to bottom)
 
 #include "main.h"
 #include "errorCodes.h"
@@ -143,8 +143,13 @@ void setupOled() {
   oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
 
   setOledSettings();
+  displayStartupScreen(); 
+}
+
+void displayStartupScreen() {
+  // TODO: design startup screen
   
-  oledDisplay.display();  
+  oledDisplay.display();    
 }
 
 void setOledSettings() {
