@@ -10,13 +10,14 @@
 
 void setup() {
   setupOled();
-  delay(100);
+  // delay(100);
  
   Serial.begin(115200);
 
   setupWifi();
 
-  displayIpAddress(); 
+  displayIpAddress();
+  delay(1000);
 }
 
 void loop() {
@@ -150,7 +151,13 @@ void setupOled() {
 }
 
 void displayStartupScreen() {
+  // Website: https://javl.github.io/image2cpp/
   // TODO: design startup screen
+  oledDisplay.println("Metar info");
+  oledDisplay.println(HOME_BASE_AIRPORT);
+
+  // Display airplane icon (generated size: 30 x 30 px)
+  oledDisplay.drawBitmap(0, 0, epd_bitmap_airplane, 30, 30, WHITE);
   
   oledDisplay.display();    
 }
