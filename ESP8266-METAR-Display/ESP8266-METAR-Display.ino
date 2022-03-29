@@ -17,7 +17,7 @@ void setup() {
   setupWifi();
 
   displayIpAddress();
-  delay(1000);
+  // delay(DISPLAY_IP_ADDR_DELAY);
 }
 
 void loop() {
@@ -38,7 +38,7 @@ void displayIpAddress() {
   oledDisplay.setCursor(0, 0);
   oledDisplay.println(WiFi.localIP());
   oledDisplay.display();
-  delay(DISPLAY_IP_ADDR_DELAY);
+  delay(DISPLAY_IP_ADDR_DELAY); // Check for delay, IP address doesn't show up
 
   oledDisplay.clearDisplay();
   oledDisplay.display();
