@@ -10,14 +10,14 @@
 
 void setup() {
   setupOled();
-  // delay(100);
+  delay(100);
  
   Serial.begin(115200);
 
   setupWifi();
 
-  displayIpAddress();
-  // delay(DISPLAY_IP_ADDR_DELAY);
+//  displayIpAddress();
+  delay(DISPLAY_IP_ADDR_DELAY);
 }
 
 void loop() {
@@ -29,8 +29,21 @@ void loop() {
   printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition);
 
   delay(DATA_REFRESH_DELAY);
+
+//  testScreen();
 }
 
+void testScreen() {
+  oledDisplay.clearDisplay();
+
+  for(int16_t i=0; i<oledDisplay.height()/2; i+=2) {
+    oledDisplay.drawRect(i, i, oledDisplay.width()-2*i, oledDisplay.height()-2*i, SSD1306_WHITE);
+    oledDisplay.display(); // Update screen with each newly-drawn rectangle
+    delay(1);
+  }
+
+  delay(2000);
+}
 
 void displayIpAddress() {
   oledDisplay.clearDisplay();
@@ -153,11 +166,11 @@ void setupOled() {
 void displayStartupScreen() {
   // Website: https://javl.github.io/image2cpp/
   // TODO: design startup screen
-  oledDisplay.println("Metar info");
-  oledDisplay.println(HOME_BASE_AIRPORT);
+//  oledDisplay.println("Metar info");
+//  oledDisplay.println(HOME_BASE_AIRPORT);
 
   // Display airplane icon (generated size: 30 x 30 px)
-  oledDisplay.drawBitmap(0, 0, epd_bitmap_airplane, 30, 30, WHITE);
+//  oledDisplay.drawBitmap(0, 0, epd_bitmap_airplane, 30, 30, WHITE);
   
   oledDisplay.display();    
 }
@@ -166,6 +179,7 @@ void setOledSettings() {
   // Set display standards
   oledDisplay.setFont(&Dialog_plain_9);
   oledDisplay.setTextColor(WHITE);
+  oledDisplay.setRotation(2); // Rotate screen 90 degrees
 }
 
 uint8_t setupWifi() {

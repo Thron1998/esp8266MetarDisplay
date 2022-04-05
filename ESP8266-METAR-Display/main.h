@@ -1,8 +1,8 @@
-#include "font.h"
-#include "images.h"
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "font.h"
+#include "images.h"
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include "wifiCreds.h"
@@ -16,12 +16,13 @@ void setOledSettings();
 uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
+void testScreen();
 
 // Server definitions
 #define SERVER "www.aviationweather.gov"
 #define BASE_URI "/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString="
 #define HTTPSPORT 443
-#define DISPLAY_IP_ADDR_DELAY 5000
+#define DISPLAY_IP_ADDR_DELAY 2000
 #define DATA_REFRESH_DELAY 10000
 
 // Oled definitions
