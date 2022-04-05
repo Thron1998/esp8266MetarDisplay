@@ -36,9 +36,38 @@ void loop() {
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
-  oledDisplay.clearDisplay();
+  oledDisplay.clear();
+  int scroll = 0;
 
-  oledDisplay.setCursor(0,0);
+  
+
+  // for (int line = 0; line < 20; ++line) {
+  //   oledDisplay.clearToEOL();
+  //   oledDisplay.print("Line ");
+  //   oledDisplay.println(line);
+
+  //   if (line >= 4) {
+  //     for (int i = 0; i < 8; ++i) {
+  //       delay(50);
+  //       oledDisplay.ssd1306WriteCmd(SSD1306_SETSTARTLINE | scroll % 64);
+  //       ++scroll;
+  //     }
+  //   } else {
+  //     delay(400);
+  //   }
+  //   if (oledDisplay.row() >= 7 && scroll >= 32) {
+  //     oledDisplay.home();
+  //   }
+  //   if (scroll >= 64) {
+  //     scroll = 0;
+  //   }
+  // }
+
+  /*
+  // oledDisplay.clearDisplay();
+  oledDisplay.clear();
+
+  // oledDisplay.setCursor(0,0);
   oledDisplay.print("---");
   oledDisplay.print(String(conditionResult));
   oledDisplay.println("---");
@@ -46,7 +75,8 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
   // Print metar results
   oledDisplay.print(String(metarResult));
 
-  oledDisplay.display();
+  // oledDisplay.display();
+  */
 }
 
 
@@ -144,20 +174,23 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
 }
 
 void displayStartupScreen() {
-  oledDisplay.clearDisplay();
+  // oledDisplay.clearDisplay();
+  oledDisplay.clear();
+
   oledDisplay.println("Metar info");
   oledDisplay.println(HOME_BASE_AIRPORT);
   
-  oledDisplay.display();    
+  // oledDisplay.display();    
 }
 
 void displayIpAddress() {
-  oledDisplay.clearDisplay();
+  // oledDisplay.clearDisplay();
+  oledDisplay.clear();
   
   oledDisplay.setCursor(0,0);
   oledDisplay.print(WiFi.localIP());
 
-  oledDisplay.display();
+  // oledDisplay.display();
 
   // Debug
   Serial.print("IP addres: ");
@@ -168,15 +201,18 @@ void setOledSettings() {
   // Set display standards
   // oledDisplay.setFont(&Dialog_plain_9);
   // oledDisplay.setFont(&Dialog_plain_12);
-
-  oledDisplay.setTextColor(WHITE);
+  oledDisplay.setFont(Arial14);
+  
   // oledDisplay.setRotation(0); // For debugging
-  oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
+  // oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
 }
 
 void setupOled() {
   Wire.begin(SDA_PIN, SCL_PIN);
-  oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+  Wire.setClock(400000L);
+
+  // oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+  oledDisplay.begin(&Adafruit128x64, OLED_ADDR, OLED_RESET);
 
   setOledSettings();
   displayStartupScreen(); 
@@ -225,12 +261,14 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
 
 void testScreen() {
   // Test display!
+  /*
   Wire.begin(SDA_PIN, SCL_PIN);
   oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
 
-  // oledDisplay.setFont(&Dialog_plain_9);
-  // oledDisplay.setFont(&Dialog_plain_12);
+  oledDisplay.setFont(&Dialog_plain_9);
+  oledDisplay.setFont(&Dialog_plain_12);
 
   oledDisplay.setTextColor(WHITE);
   oledDisplay.setRotation(0); // For debugging
+  */
 }
