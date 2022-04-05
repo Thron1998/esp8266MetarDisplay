@@ -1,12 +1,15 @@
 // Combined url: www.aviationweather.gov/adds/dataserver_current/httpparam?dataSource=metars&requestType=retrieve&format=xml&hoursBeforeNow=3&mostRecentForEachStation=true&stationString=EHLE
 // http://oleddisplay.squix.ch/#/home
+// Website: https://javl.github.io/image2cpp/
+// https://www.youtube.com/watch?v=QFubFhrEfmQ
 
-// max 44 characters
+// max 44 characters (* 2 so 88 characters max from top to bottom)
 
 #include "main.h"
 #include "errorCodes.h"
 
-#define HOME_BASE_AIRPORT "EHLE"
+// #define HOME_BASE_AIRPORT "EHLE"
+const char* HOME_BASE_AIRPORT = "EHLE";
 
 void setup() {
   setupOled();
@@ -16,46 +19,43 @@ void setup() {
 
   setupWifi();
 
-  displayIpAddress(); 
+  displayIpAddress();
+  delay(DISPLAY_IP_ADDR_DELAY);
 }
 
 void loop() {
   char metar[500], condition[6];
     
-  getMetarInfo(HOME_BASE_AIRPORT, metar, condition);
+  getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
 
-  displayMetarInfo(HOME_BASE_AIRPORT, metar, condition);
-  printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition);
+  displayMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Show data on display
+
+  printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
 
   delay(DATA_REFRESH_DELAY);
-}
-
-
-void displayIpAddress() {
-  oledDisplay.clearDisplay();
-  
-  oledDisplay.setCursor(0, 0);
-  oledDisplay.println(WiFi.localIP());
-  oledDisplay.display();
-  delay(DISPLAY_IP_ADDR_DELAY);
-
-  oledDisplay.clearDisplay();
-  oledDisplay.display();
-  
-  // Debug
-  Serial.print("IP addres: ");
-  Serial.println(WiFi.localIP());
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
   oledDisplay.clearDisplay();
 
   oledDisplay.setCursor(0,0);
-  oledDisplay.println(airportCode);
+  oledDisplay.print("---");
+  oledDisplay.print(String(conditionResult));
+  oledDisplay.println("---");
+
+  // Print metar results
   oledDisplay.print(String(metarResult));
-//  oledDisplay.print(String(conditionResult));
 
   oledDisplay.display();
+}
+
+
+void scrollText() {
+
+}
+
+bool getNextLine() {
+
 }
 
 void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
@@ -127,6 +127,11 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
       }
     }
 
+    // --------------
+    // TODO: add end character to end of string received
+
+    // --------------
+
     // Debug values
     Serial.println("Received values");
     Serial.println("Raw metar: " + currentMetarRaw);
@@ -138,19 +143,43 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
   }  
 }
 
-void setupOled() {
-  Wire.begin(SDA_PIN,SCL_PIN);
-  oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-
-  setOledSettings();
+void displayStartupScreen() {
+  oledDisplay.clearDisplay();
+  oledDisplay.println("Metar info");
+  oledDisplay.println(HOME_BASE_AIRPORT);
   
-  oledDisplay.display();  
+  oledDisplay.display();    
+}
+
+void displayIpAddress() {
+  oledDisplay.clearDisplay();
+  
+  oledDisplay.setCursor(0,0);
+  oledDisplay.print(WiFi.localIP());
+
+  oledDisplay.display();
+
+  // Debug
+  Serial.print("IP addres: ");
+  Serial.println(WiFi.localIP());
 }
 
 void setOledSettings() {
   // Set display standards
-  oledDisplay.setFont(&Dialog_plain_9);
+  // oledDisplay.setFont(&Dialog_plain_9);
+  // oledDisplay.setFont(&Dialog_plain_12);
+
   oledDisplay.setTextColor(WHITE);
+  // oledDisplay.setRotation(0); // For debugging
+  oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
+}
+
+void setupOled() {
+  Wire.begin(SDA_PIN, SCL_PIN);
+  oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+
+  setOledSettings();
+  displayStartupScreen(); 
 }
 
 uint8_t setupWifi() {
@@ -161,6 +190,7 @@ uint8_t setupWifi() {
     delay(500);
     Serial.print(".");
   }
+  Serial.print('\n');
 
   return WiFi.status(); // Return status after setup
 }
@@ -191,4 +221,16 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
 
     i++;
   }  
+}
+
+void testScreen() {
+  // Test display!
+  Wire.begin(SDA_PIN, SCL_PIN);
+  oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+
+  // oledDisplay.setFont(&Dialog_plain_9);
+  // oledDisplay.setFont(&Dialog_plain_12);
+
+  oledDisplay.setTextColor(WHITE);
+  oledDisplay.setRotation(0); // For debugging
 }
