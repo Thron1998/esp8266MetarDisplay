@@ -8,7 +8,8 @@
 #include "main.h"
 #include "errorCodes.h"
 
-#define HOME_BASE_AIRPORT "EHLE"
+// #define HOME_BASE_AIRPORT "EHLE"
+const char* HOME_BASE_AIRPORT = "EHLE";
 
 void setup() {
   setupOled();
@@ -37,23 +38,13 @@ void loop() {
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
   oledDisplay.clearDisplay();
 
-  int i = 0;
-  bool dataAvailable = true;
-
   oledDisplay.setCursor(0,0);
-  oledDisplay.print(String(metarResult));
-
-  // TODO: handle result data for printing correctly
-
-  /*
-  oledDisplay.setCursor(0,0);
-  oledDisplay.print(airportCode);
-  oledDisplay.print(" ");
-  oledDisplay.println(String(conditionResult));
+  oledDisplay.print("---");
+  oledDisplay.print(String(conditionResult));
+  oledDisplay.println("---");
 
   // Print metar results
   oledDisplay.print(String(metarResult));
-  */
 
   oledDisplay.display();
 }
@@ -153,11 +144,9 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
 }
 
 void displayStartupScreen() {
+  oledDisplay.clearDisplay();
   oledDisplay.println("Metar info");
   oledDisplay.println(HOME_BASE_AIRPORT);
-
-  // Display airplane icon (generated size: 30 x 30 px)
-  // oledDisplay.drawBitmap(0, 0, epd_bitmap_airplane, 30, 30, WHITE);
   
   oledDisplay.display();    
 }
@@ -165,14 +154,11 @@ void displayStartupScreen() {
 void displayIpAddress() {
   oledDisplay.clearDisplay();
   
-  oledDisplay.setCursor(0, 0);
-  oledDisplay.println(WiFi.localIP());
-  oledDisplay.display();
-  delay(DISPLAY_IP_ADDR_DELAY); // Check for delay, IP address doesn't show up
+  oledDisplay.setCursor(0,0);
+  oledDisplay.print(WiFi.localIP());
 
-  oledDisplay.clearDisplay();
   oledDisplay.display();
-  
+
   // Debug
   Serial.print("IP addres: ");
   Serial.println(WiFi.localIP());
@@ -181,10 +167,11 @@ void displayIpAddress() {
 void setOledSettings() {
   // Set display standards
   // oledDisplay.setFont(&Dialog_plain_9);
-  oledDisplay.setFont(&Dialog_plain_12);
+  // oledDisplay.setFont(&Dialog_plain_12);
 
   oledDisplay.setTextColor(WHITE);
-  oledDisplay.setRotation(2); // Rotate screen 90 degrees
+  // oledDisplay.setRotation(0); // For debugging
+  oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
 }
 
 void setupOled() {
@@ -203,20 +190,9 @@ uint8_t setupWifi() {
     delay(500);
     Serial.print(".");
   }
+  Serial.print('\n');
 
   return WiFi.status(); // Return status after setup
-}
-
-void testScreen() {
-  oledDisplay.clearDisplay();
-
-  for(int16_t i=0; i<oledDisplay.height()/2; i+=2) {
-    oledDisplay.drawRect(i, i, oledDisplay.width()-2*i, oledDisplay.height()-2*i, SSD1306_WHITE);
-    oledDisplay.display(); // Update screen with each newly-drawn rectangle
-    delay(1);
-  }
-
-  delay(2000);
 }
 
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult) {
@@ -245,4 +221,16 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
 
     i++;
   }  
+}
+
+void testScreen() {
+  // Test display!
+  Wire.begin(SDA_PIN, SCL_PIN);
+  oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+
+  // oledDisplay.setFont(&Dialog_plain_9);
+  // oledDisplay.setFont(&Dialog_plain_12);
+
+  oledDisplay.setTextColor(WHITE);
+  oledDisplay.setRotation(0); // For debugging
 }
