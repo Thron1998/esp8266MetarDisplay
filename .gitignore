@@ -32,3 +32,4 @@
 *.app
 ESP8266-METAR-Display/wifiCreds.h
 .DS_Store
+ESP8266-METAR-Display/.vscode/c_cpp_properties.json

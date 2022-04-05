@@ -1,3 +1,5 @@
+// #include <SSD1306Ascii.h>
+
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -17,6 +19,11 @@ uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
 void testScreen();
+void scrollText();
+bool getNextLine();
+
+// Data definitions
+#define DATA_END_SYMBOL '%'
 
 // Server definitions
 #define SERVER "www.aviationweather.gov"
