@@ -41,9 +41,13 @@ void loop() {
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize) {
   int scroll = 0;
   int line = 0;
-  static unsigned long* txtPointer = 0;
+  unsigned long* txtPointer = 0;
   
   bool dataAvailable = true;
+
+  // Reset display
+  oledDisplay.clear();
+  oledDisplay.home();
 
   while (dataAvailable) {
     oledDisplay.clearToEOL();
@@ -71,11 +75,6 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
     }
     line++;
   }
-
-  // No more data, clear screen start all over again
-  delay(3000);
-  oledDisplay.clear();
-  oledDisplay.home();
 
   /*
   // oledDisplay.clearDisplay();
