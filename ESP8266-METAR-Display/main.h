@@ -25,7 +25,10 @@ uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
 void testScreen();
-bool getNextLine(char* metarResult, unsigned long* txtPointer);
+bool getNextLine(char* metarResult, uint16_t* pointerToText);
+
+// Serial definitions
+const int BAUD_RATE = 115200;
 
 // Data definitions
 #define DATA_END_SYMBOL '%'
@@ -60,7 +63,7 @@ WiFiClientSecure client;
 // Adafruit_SSD1306 oledDisplay(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 SSD1306AsciiWire oledDisplay;
 
-const char allMyText[] PROGMEM = {"Het was al duidelijk dat mensen afgelopen vrijdag in groten getale zijn gaan tanken," 
-                                    "omdat toen de brandstofprijzen fors omlaag gingen. De dag ervoor, met de oude hoge prijzen," 
-                                    "was dat juist 22 procent minder dan normaal. Ook zaterdag 2 april was het aantal tankbeurten" 
+const char allMyText[] PROGMEM = {"Het was al duidelijk dat mensen afgelopen vrijdag in groten getale zijn gaan tanken, " 
+                                    "omdat toen de brandstofprijzen fors omlaag gingen. De dag ervoor, met de oude hoge prijzen, " 
+                                    "was dat juist 22 procent minder dan normaal. Ook zaterdag 2 april was het aantal tankbeurten " 
                                     "nog fors hoger, bijna 20 procent."};

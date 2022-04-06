@@ -8,6 +8,7 @@
 #include "main.h"
 #include "errorCodes.h"
 
+// Buffer to print line on oled display
 char reply[21];
 
 // #define HOME_BASE_AIRPORT "EHLE"
@@ -17,7 +18,7 @@ void setup() {
   setupOled();
   delay(100);
  
-  Serial.begin(115200);
+  Serial.begin(BAUD_RATE);
 
   setupWifi();
 
@@ -41,8 +42,11 @@ void loop() {
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize) {
   int scroll = 0;
   int line = 0;
-  unsigned long* txtPointer = 0;
-  
+
+  // Pointer for index in text
+  uint16_t pointerToText = 0;
+  uint16_t* pointerToPointer = &pointerToText;
+
   bool dataAvailable = true;
 
   // Reset display
@@ -52,8 +56,15 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
   while (dataAvailable) {
     oledDisplay.clearToEOL();
 
-    dataAvailable = getNextLine(metarResult, txtPointer);
+    // Serial.println("Pointer: ");
+    // Serial.println((int)pointerToPointer);
+    // Serial.println((int)&pointerToPointer);
+    // Serial.println((int)*pointerToPointer);
+
+    dataAvailable = getNextLine(metarResult, pointerToPointer);
+
     oledDisplay.println(reply);
+    Serial.println("Display reply");
     Serial.println(reply);
     
     if (line >= 4) {
@@ -93,10 +104,12 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 }
 
 // Get the next 20 characters (or up to space to prevent trunction)
-bool getNextLine(char* metarResult, unsigned long* txtPointer) {
+bool getNextLine(char* metarResult, uint16_t* pointerToText) {
+  Serial.print("Pointer value: ");
+  Serial.println((int)*pointerToText);
 
   // This
-  // static unsigned long txtPointer = 0;
+  // static unsigned long pointerToText = 0;
   static bool lineBreakInProgress = false;
 
   // Fill reply array with spaces
@@ -110,13 +123,13 @@ bool getNextLine(char* metarResult, unsigned long* txtPointer) {
   }
 
   for (uint8_t cnt = 0; cnt < 20; cnt++) {
-
-    if(*txtPointer < strlen(allMyText)) {
-      char myChar = pgm_read_byte_near(allMyText + *txtPointer);
+    
+    if(*pointerToText < strlen(allMyText)) {
+      char myChar = pgm_read_byte_near(allMyText + *pointerToText);
 
       // increment pointer before we return
-      *txtPointer++;
-
+      (*pointerToText)++;
+      
       // Deal with special characters (here, just new lines)
       if (myChar == '%') {
         // Set the flag that we have a line-break situation
@@ -126,7 +139,7 @@ bool getNextLine(char* metarResult, unsigned long* txtPointer) {
 
       reply[cnt] = myChar;
     } else {
-      *txtPointer = 0;
+      *pointerToText = 0;
       Serial.println("\nEnd of data!");
       return false;
     }
@@ -137,9 +150,9 @@ bool getNextLine(char* metarResult, unsigned long* txtPointer) {
     return true;
   }
 
-  if (pgm_read_byte_near(allMyText + *txtPointer) == ' ') {
+  if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
     Serial.println("Next char is a space");
-    *txtPointer++;
+    (*pointerToText)++;
     return true;
   }
 
@@ -152,14 +165,14 @@ bool getNextLine(char* metarResult, unsigned long* txtPointer) {
       // Space fill rest of line and decrement pointer for next line
       for (uint8_t cnt2 = cnt; cnt2 < 20; cnt2++) {
         reply[cnt2] = ' ';
-        *txtPointer--;
+        (*pointerToText)--;
       }
 
       // If the next character in the string (yet to be printed) is a space
       // increment the pointer so we don't start a line with a space
-      if (pgm_read_byte_near(allMyText + *txtPointer) == ' ') {
+      if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
         Serial.println("Next char is a space");
-        *txtPointer++;
+        (*pointerToText)++;
       }
 
       break;
@@ -248,8 +261,9 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
     Serial.println("Metar count: " + currentMetarCount);
 
     // Save results
+    *metarSize = currentMetarCount;
     strcpy(metarResult, currentMetarRaw.c_str());
-    strcpy(conditionResult, currentCondition.c_str());    
+    strcpy(conditionResult, currentCondition.c_str());  
   }  
 }
 
@@ -337,6 +351,10 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
   }  
 }
 
+
+// TEST SECTION
+
+
 void testScreen() {
   // Test display!
   /*
@@ -350,3 +368,23 @@ void testScreen() {
   oledDisplay.setRotation(0); // For debugging
   */
 }
+
+// void testPointerValues(int* pointer);
+
+// int value = 0;
+// int* p = &value;
+
+// void testPointerValues(int* pointer) {
+//   (*pointer)++;
+// }
+
+  // Serial.print("*p: ");
+  // Serial.println((int)*p);
+  // Serial.print("&p: ");
+  // Serial.println((int)&p);
+  // Serial.print("p: ");
+  // Serial.println((int)p);
+
+  // testPointerValues(p);
+
+  // delay(1000);
