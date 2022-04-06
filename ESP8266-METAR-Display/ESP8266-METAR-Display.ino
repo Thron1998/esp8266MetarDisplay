@@ -8,6 +8,8 @@
 #include "main.h"
 #include "errorCodes.h"
 
+char reply[21];
+
 // #define HOME_BASE_AIRPORT "EHLE"
 const char* HOME_BASE_AIRPORT = "EHLE";
 
@@ -25,43 +27,53 @@ void setup() {
 
 void loop() {
   char metar[500], condition[6];
+  int* metarSize;
     
-  getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
+  getMetarInfo(HOME_BASE_AIRPORT, metar, condition, metarSize); // Fetch data from server
 
-  displayMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Show data on display
+  displayMetarInfo(HOME_BASE_AIRPORT, metar, condition, metarSize); // Show data on display
 
   printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
 
   delay(DATA_REFRESH_DELAY);
 }
 
-void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
-  oledDisplay.clear();
+void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize) {
   int scroll = 0;
+  int line = 0;
+  bool dataAvailable = true;
 
-  
+  while (dataAvailable) {
+    oledDisplay.clearToEOL();
 
-  // for (int line = 0; line < 20; ++line) {
-  //   oledDisplay.clearToEOL();
-  //   oledDisplay.print("Line ");
-  //   oledDisplay.println(line);
+    dataAvailable = getNextLine(metarResult);
+    oledDisplay.println(reply);
+    Serial.println(reply);
+    
+    if (line >= 4) {
+      for (int i = 0; i < 8; ++i) {
+        delay(50);
+        oledDisplay.ssd1306WriteCmd(SSD1306_SETSTARTLINE | scroll % 64);
+        ++scroll;
+      }
+    } else {
+      delay(0);
+    }
 
-  //   if (line >= 4) {
-  //     for (int i = 0; i < 8; ++i) {
-  //       delay(50);
-  //       oledDisplay.ssd1306WriteCmd(SSD1306_SETSTARTLINE | scroll % 64);
-  //       ++scroll;
-  //     }
-  //   } else {
-  //     delay(400);
-  //   }
-  //   if (oledDisplay.row() >= 7 && scroll >= 32) {
-  //     oledDisplay.home();
-  //   }
-  //   if (scroll >= 64) {
-  //     scroll = 0;
-  //   }
-  // }
+    if (oledDisplay.row() >= 7 && scroll >= 32) {
+      oledDisplay.home();
+    }
+
+    if (scroll >= 64) {
+      scroll = 0;
+    }
+    line++;
+  }
+
+  // No more data, clear screen start all over again
+  delay(3000);
+  oledDisplay.clear();
+  oledDisplay.home();
 
   /*
   // oledDisplay.clearDisplay();
@@ -79,22 +91,90 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
   */
 }
 
+// Get the next 20 characters (or up to space to prevent trunction)
+bool getNextLine(char* metarResult) {
 
-void scrollText() {
+  // This
+  static unsigned long txtPointer = 0;
+  static bool lineBreakInProgress = false;
 
+  // Fill reply array with spaces
+  for (int cnt = 0; cnt < 20; cnt++) {
+    reply[cnt] = ' ';
+  }
+
+  if (lineBreakInProgress) {
+    lineBreakInProgress = false;
+    return true;
+  }
+
+  for (uint8_t cnt = 0; cnt < 20; cnt++) {
+
+    if(txtPointer < strlen(allMyText)) {
+      char myChar = pgm_read_byte_near(allMyText + txtPointer);
+
+      // increment pointer before we return
+      txtPointer++;
+
+      // Deal with special characters (here, just new lines)
+      if (myChar == '%') {
+        // Set the flag that we have a line-break situation
+        lineBreakInProgress = true;
+        return true;
+      }
+
+      reply[cnt] = myChar;
+    } else {
+      txtPointer = 0;
+      Serial.println("\nEnd of data!");
+      return false;
+    }
+  }
+
+  if (reply[19] == ' ') {
+    Serial.println("Final char is a space");
+    return true;
+  }
+
+  if (pgm_read_byte_near(allMyText + txtPointer) == ' ') {
+    Serial.println("Next char is a space");
+    txtPointer++;
+    return true;
+  }
+
+  // Track back to last space
+  for (uint8_t cnt = 18; cnt > 0; cnt--) {
+    if (reply[cnt] == ' ') {
+
+      Serial.print("Space found at char: ");
+      Serial.println(cnt);
+      // Space fill rest of line and decrement pointer for next line
+      for (uint8_t cnt2 = cnt; cnt2 < 20; cnt2++) {
+        reply[cnt2] = ' ';
+        txtPointer--;
+      }
+
+      // If the next character in the string (yet to be printed) is a space
+      // increment the pointer so we don't start a line with a space
+      if (pgm_read_byte_near(allMyText + txtPointer) == ' ') {
+        Serial.println("Next char is a space");
+        txtPointer++;
+      }
+
+      break;
+    }
+  }
+  return true;
 }
 
-bool getNextLine() {
-
-}
-
-void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
+void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize) {
   const char* airportString = airportCode;
   char c;
 
   String currentCondition = "";
   String currentMetarRaw = "";
   String currentLine = "";
+  int currentMetarCount = 0;
       
   boolean readingCondition = false;
   boolean readingMetarRaw = false;  
@@ -157,15 +237,14 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
       }
     }
 
-    // --------------
-    // TODO: add end character to end of string received
-
-    // --------------
+    // Get metar length
+    currentMetarCount = currentMetarRaw.length();
 
     // Debug values
     Serial.println("Received values");
     Serial.println("Raw metar: " + currentMetarRaw);
     Serial.println("Flight conditions: " + currentCondition);
+    Serial.println("Metar count: " + currentMetarCount);
 
     // Save results
     strcpy(metarResult, currentMetarRaw.c_str());
@@ -199,8 +278,6 @@ void displayIpAddress() {
 
 void setOledSettings() {
   // Set display standards
-  // oledDisplay.setFont(&Dialog_plain_9);
-  // oledDisplay.setFont(&Dialog_plain_12);
   oledDisplay.setFont(Arial14);
   
   // oledDisplay.setRotation(0); // For debugging

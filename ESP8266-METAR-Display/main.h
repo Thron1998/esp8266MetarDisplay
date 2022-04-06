@@ -16,8 +16,8 @@
 #include "SSD1306AsciiWire.h"
 
 // Function declaration
-void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
-void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
+void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize);
+void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize);
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult);
 void setupOled();
 void setOledSettings();
@@ -25,8 +25,7 @@ uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
 void testScreen();
-void scrollText();
-bool getNextLine();
+bool getNextLine(char* metarResult);
 
 // Data definitions
 #define DATA_END_SYMBOL '%'
@@ -60,3 +59,5 @@ WiFiClientSecure client;
 // Oled object
 // Adafruit_SSD1306 oledDisplay(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 SSD1306AsciiWire oledDisplay;
+
+const char allMyText[] PROGMEM = {"Hello world, from arduino oled display"};
