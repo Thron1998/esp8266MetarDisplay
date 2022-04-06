@@ -25,7 +25,7 @@ uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
 void testScreen();
-bool getNextLine(char* metarResult);
+bool getNextLine(char* metarResult, unsigned long* txtPointer);
 
 // Data definitions
 #define DATA_END_SYMBOL '%'

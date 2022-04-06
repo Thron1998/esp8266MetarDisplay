@@ -41,12 +41,14 @@ void loop() {
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize) {
   int scroll = 0;
   int line = 0;
+  static unsigned long* txtPointer = 0;
+  
   bool dataAvailable = true;
 
   while (dataAvailable) {
     oledDisplay.clearToEOL();
 
-    dataAvailable = getNextLine(metarResult);
+    dataAvailable = getNextLine(metarResult, txtPointer);
     oledDisplay.println(reply);
     Serial.println(reply);
     
@@ -92,10 +94,10 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 }
 
 // Get the next 20 characters (or up to space to prevent trunction)
-bool getNextLine(char* metarResult) {
+bool getNextLine(char* metarResult, unsigned long* txtPointer) {
 
   // This
-  static unsigned long txtPointer = 0;
+  // static unsigned long txtPointer = 0;
   static bool lineBreakInProgress = false;
 
   // Fill reply array with spaces
@@ -110,11 +112,11 @@ bool getNextLine(char* metarResult) {
 
   for (uint8_t cnt = 0; cnt < 20; cnt++) {
 
-    if(txtPointer < strlen(allMyText)) {
-      char myChar = pgm_read_byte_near(allMyText + txtPointer);
+    if(*txtPointer < strlen(allMyText)) {
+      char myChar = pgm_read_byte_near(allMyText + *txtPointer);
 
       // increment pointer before we return
-      txtPointer++;
+      *txtPointer++;
 
       // Deal with special characters (here, just new lines)
       if (myChar == '%') {
@@ -125,7 +127,7 @@ bool getNextLine(char* metarResult) {
 
       reply[cnt] = myChar;
     } else {
-      txtPointer = 0;
+      *txtPointer = 0;
       Serial.println("\nEnd of data!");
       return false;
     }
@@ -136,9 +138,9 @@ bool getNextLine(char* metarResult) {
     return true;
   }
 
-  if (pgm_read_byte_near(allMyText + txtPointer) == ' ') {
+  if (pgm_read_byte_near(allMyText + *txtPointer) == ' ') {
     Serial.println("Next char is a space");
-    txtPointer++;
+    *txtPointer++;
     return true;
   }
 
@@ -151,14 +153,14 @@ bool getNextLine(char* metarResult) {
       // Space fill rest of line and decrement pointer for next line
       for (uint8_t cnt2 = cnt; cnt2 < 20; cnt2++) {
         reply[cnt2] = ' ';
-        txtPointer--;
+        *txtPointer--;
       }
 
       // If the next character in the string (yet to be printed) is a space
       // increment the pointer so we don't start a line with a space
-      if (pgm_read_byte_near(allMyText + txtPointer) == ' ') {
+      if (pgm_read_byte_near(allMyText + *txtPointer) == ' ') {
         Serial.println("Next char is a space");
-        txtPointer++;
+        *txtPointer++;
       }
 
       break;
