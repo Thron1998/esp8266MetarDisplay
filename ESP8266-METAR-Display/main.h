@@ -24,8 +24,8 @@ void setOledSettings();
 uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
-void testScreen();
 bool getNextLine(char* metarResult, uint16_t* pointerToText);
+void testScreen();
 
 // Serial definitions
 const int BAUD_RATE = 115200;

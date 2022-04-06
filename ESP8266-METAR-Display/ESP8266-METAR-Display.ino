@@ -40,6 +40,18 @@ void loop() {
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize) {
+  /*
+   * Code is written for a 128x32 oled display. Rewrite code
+   * for 128x64 oled display for it to work
+   * 
+   * The 128×64 OLED screen displays all the contents of RAM whereas 128×32 OLED screen displays only 4 pages (half content) of RAM.
+   * https://lastminuteengineers.com/oled-display-arduino-tutorial/
+   * Datasheet 1306
+   * https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
+   * Datasheet 128x64 oled
+   * https://www.vishay.com/docs/37902/oled128o064dbpp3n00000.pdf
+   */
+
   int scroll = 0;
   int line = 0;
 
@@ -105,8 +117,8 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 
 // Get the next 20 characters (or up to space to prevent trunction)
 bool getNextLine(char* metarResult, uint16_t* pointerToText) {
-  Serial.print("Pointer value: ");
-  Serial.println((int)*pointerToText);
+  // Serial.print("Pointer value: ");
+  // Serial.println((int)*pointerToText);
 
   // This
   // static unsigned long pointerToText = 0;
@@ -140,18 +152,18 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
       reply[cnt] = myChar;
     } else {
       *pointerToText = 0;
-      Serial.println("\nEnd of data!");
+      // Serial.println("\nEnd of data!");
       return false;
     }
   }
 
   if (reply[19] == ' ') {
-    Serial.println("Final char is a space");
+    // Serial.println("Final char is a space");
     return true;
   }
 
   if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
-    Serial.println("Next char is a space");
+    // Serial.println("Next char is a space");
     (*pointerToText)++;
     return true;
   }
@@ -160,8 +172,9 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
   for (uint8_t cnt = 18; cnt > 0; cnt--) {
     if (reply[cnt] == ' ') {
 
-      Serial.print("Space found at char: ");
-      Serial.println(cnt);
+      // Serial.print("Space found at char: ");
+      // Serial.println(cnt);
+
       // Space fill rest of line and decrement pointer for next line
       for (uint8_t cnt2 = cnt; cnt2 < 20; cnt2++) {
         reply[cnt2] = ' ';
@@ -171,7 +184,7 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
       // If the next character in the string (yet to be printed) is a space
       // increment the pointer so we don't start a line with a space
       if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
-        Serial.println("Next char is a space");
+        // Serial.println("Next char is a space");
         (*pointerToText)++;
       }
 
