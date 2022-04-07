@@ -44,6 +44,9 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
    * Code is written for a 128x32 oled display. Rewrite code
    * for 128x64 oled display for it to work
    * 
+   * Idea: fetch data from server, split data into packs of 128x64 pixels (4 rows) and display one by one
+   * To make more fluent: cut all packets in half, this will refresh the page with 2 rows at a time
+   * 
    * The 128×64 OLED screen displays all the contents of RAM whereas 128×32 OLED screen displays only 4 pages (half content) of RAM.
    * https://lastminuteengineers.com/oled-display-arduino-tutorial/
    * Datasheet 1306
@@ -57,7 +60,7 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 
   // Pointer for index in text
   uint16_t pointerToText = 0;
-  uint16_t* pointerToPointer = &pointerToText;
+  uint16_t* pointerToTextPointer = &pointerToText;
 
   bool dataAvailable = true;
 
@@ -68,18 +71,31 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
   while (dataAvailable) {
     oledDisplay.clearToEOL();
 
-    // Serial.println("Pointer: ");
-    // Serial.println((int)pointerToPointer);
-    // Serial.println((int)&pointerToPointer);
-    // Serial.println((int)*pointerToPointer);
-
-    dataAvailable = getNextLine(metarResult, pointerToPointer);
+    dataAvailable = getNextLine(metarResult, pointerToTextPointer); // Grab new line, adjusted to display width
 
     oledDisplay.println(reply);
-    Serial.println("Display reply");
+    Serial.println("Display reply:");
     Serial.println(reply);
     
-    if (line >= 4) {
+    
+    if (line >= MAX_OLED_LINES) { // End of display is reached. Load new data into RAM
+      line = 0; // Reset lines
+
+      delay(DISPLAY_DATA_TIME); // Delay current display state
+
+      oledDisplay.home();
+      oledDisplay.clear(); // Reset display for new data
+    } else {
+      line++;
+    }
+
+    // line++;
+
+    // ----------------
+    // OLD CODE
+    // ----------------
+    /*
+    if (line >= 4) { // End of display is reached. Load new data into RAM (TODO)
       for (int i = 0; i < 8; ++i) {
         delay(50);
         oledDisplay.ssd1306WriteCmd(SSD1306_SETSTARTLINE | scroll % 64);
@@ -96,36 +112,22 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
     if (scroll >= 64) {
       scroll = 0;
     }
-    line++;
+    */
   }
 
-  /*
-  // oledDisplay.clearDisplay();
-  oledDisplay.clear();
+  delay(DISPLAY_DATA_TIME); // Add delay so last array of data doesn't dissapear instantly
 
-  // oledDisplay.setCursor(0,0);
-  oledDisplay.print("---");
-  oledDisplay.print(String(conditionResult));
-  oledDisplay.println("---");
-
-  // Print metar results
-  oledDisplay.print(String(metarResult));
-
-  // oledDisplay.display();
-  */
 }
 
 // Get the next 20 characters (or up to space to prevent trunction)
 bool getNextLine(char* metarResult, uint16_t* pointerToText) {
-  // Serial.print("Pointer value: ");
-  // Serial.println((int)*pointerToText);
+  Serial.print("Pointer value: ");
+  Serial.println((int)*pointerToText);
 
-  // This
-  // static unsigned long pointerToText = 0;
   static bool lineBreakInProgress = false;
 
   // Fill reply array with spaces
-  for (int cnt = 0; cnt < 20; cnt++) {
+  for (uint8_t cnt = 0; cnt < 20; cnt++) {
     reply[cnt] = ' ';
   }
 
@@ -143,7 +145,7 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
       (*pointerToText)++;
       
       // Deal with special characters (here, just new lines)
-      if (myChar == '%') {
+      if (myChar == DATA_END_SYMBOL) {
         // Set the flag that we have a line-break situation
         lineBreakInProgress = true;
         return true;
@@ -152,28 +154,22 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
       reply[cnt] = myChar;
     } else {
       *pointerToText = 0;
-      // Serial.println("\nEnd of data!");
-      return false;
+      return false; // End of data, return dataAvailable = false
     }
   }
 
   if (reply[19] == ' ') {
-    // Serial.println("Final char is a space");
-    return true;
+    return true; // Final char is a space
   }
 
   if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
-    // Serial.println("Next char is a space");
     (*pointerToText)++;
-    return true;
+    return true; // Next char is a space
   }
 
   // Track back to last space
   for (uint8_t cnt = 18; cnt > 0; cnt--) {
     if (reply[cnt] == ' ') {
-
-      // Serial.print("Space found at char: ");
-      // Serial.println(cnt);
 
       // Space fill rest of line and decrement pointer for next line
       for (uint8_t cnt2 = cnt; cnt2 < 20; cnt2++) {
@@ -184,11 +180,10 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
       // If the next character in the string (yet to be printed) is a space
       // increment the pointer so we don't start a line with a space
       if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
-        // Serial.println("Next char is a space");
-        (*pointerToText)++;
+        (*pointerToText)++; // Next char is a space
       }
 
-      break;
+      break; // Last space was found, break from for loop
     }
   }
   return true;
@@ -364,9 +359,9 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
   }  
 }
 
-
+// --------------------
 // TEST SECTION
-
+// --------------------
 
 void testScreen() {
   // Test display!
@@ -401,3 +396,21 @@ void testScreen() {
   // testPointerValues(p);
 
   // delay(1000);
+
+// ------------------
+// Old main
+// ------------------
+  /*
+  // oledDisplay.clearDisplay();
+  oledDisplay.clear();
+
+  // oledDisplay.setCursor(0,0);
+  oledDisplay.print("---");
+  oledDisplay.print(String(conditionResult));
+  oledDisplay.println("---");
+
+  // Print metar results
+  oledDisplay.print(String(metarResult));
+
+  // oledDisplay.display();
+  */

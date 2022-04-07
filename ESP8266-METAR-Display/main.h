@@ -31,7 +31,7 @@ void testScreen();
 const int BAUD_RATE = 115200;
 
 // Data definitions
-#define DATA_END_SYMBOL '%'
+const char DATA_END_SYMBOL = '%';
 
 // Server definitions
 #define SERVER "www.aviationweather.gov"
@@ -47,14 +47,18 @@ const int BAUD_RATE = 115200;
 #define OLED_ADDR 0x3C
 #define SCL_PIN 0
 #define SDA_PIN 2
-// Fonts to use:
-// Arial14
-// fixed_bold10x15
-// font8x8
-// TimesNewRoman16
-// Verdana12
-// X11fixed7x14
-// ZevvPeep8x16
+const int MAX_OLED_LINES = 4;
+const int DISPLAY_DATA_TIME = 5000;
+const int MAX_CHARACTER_COUNT = 20;
+/* Fonts to use:
+* Arial14
+ * fixed_bold10x15
+ * font8x8
+ * TimesNewRoman16
+ * Verdana12
+ * X11fixed7x14
+ * ZevvPeep8x16
+*/
 
 // Wifi object
 WiFiClientSecure client;
