@@ -47,9 +47,14 @@ const char DATA_END_SYMBOL = '%';
 #define OLED_ADDR 0x3C
 #define SCL_PIN 0
 #define SDA_PIN 2
-const int MAX_OLED_LINES = 4;
+const uint8_t MAX_OLED_LINES = 4;
+
+// const uint8_t MAX_CHARACTER_COUNT = 20; // Max character count using font lcd5x7
+// const int MAX_CHARACTER_COUNT = 9; // Max character count using font Arial14
+const int MAX_CHARACTER_COUNT = 16; // Test value
+
 const int DISPLAY_DATA_TIME = 5000;
-const int MAX_CHARACTER_COUNT = 20;
+const uint8_t* DISPLAY_FONT = Arial14;
 /* Fonts to use:
 * Arial14
  * fixed_bold10x15
@@ -67,7 +72,9 @@ WiFiClientSecure client;
 // Adafruit_SSD1306 oledDisplay(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 SSD1306AsciiWire oledDisplay;
 
-const char allMyText[] PROGMEM = {"Het was al duidelijk dat mensen afgelopen vrijdag in groten getale zijn gaan tanken, " 
-                                    "omdat toen de brandstofprijzen fors omlaag gingen. De dag ervoor, met de oude hoge prijzen, " 
-                                    "was dat juist 22 procent minder dan normaal. Ook zaterdag 2 april was het aantal tankbeurten " 
-                                    "nog fors hoger, bijna 20 procent."};
+// const char allMyText[] PROGMEM = {"Het was al duidelijk dat mensen afgelopen vrijdag in groten getale zijn gaan tanken, " 
+//                                     "omdat toen de brandstofprijzen fors omlaag gingen. De dag ervoor, met de oude hoge prijzen, " 
+//                                     "was dat juist 22 procent minder dan normaal. Ook zaterdag 2 april was het aantal tankbeurten " 
+//                                     "nog fors hoger, bijna 20 procent."};
+const char allMyText[] PROGMEM ={"METAR EHAM 071655Z 28024G34KT 250V320 9999 -SHRA FEW020CB SCT045 "
+                                 "06/04 Q0985 RESHRA TEMPO 26035G45KT 4000 SHRAGS="};

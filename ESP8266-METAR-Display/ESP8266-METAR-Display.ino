@@ -56,11 +56,12 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
    */
 
   int scroll = 0;
-  int line = 0;
+  uint8_t line = 0;
 
   // Pointer for index in text
   uint16_t pointerToText = 0;
   uint16_t* pointerToTextPointer = &pointerToText;
+  // Serial.println("1");
 
   bool dataAvailable = true;
 
@@ -70,15 +71,18 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 
   while (dataAvailable) {
     oledDisplay.clearToEOL();
+    // Serial.println("2");
 
     dataAvailable = getNextLine(metarResult, pointerToTextPointer); // Grab new line, adjusted to display width
 
+    // Serial.println("9");
     oledDisplay.println(reply);
     Serial.println("Display reply:");
     Serial.println(reply);
     
     
     if (line >= MAX_OLED_LINES) { // End of display is reached. Load new data into RAM
+      // Serial.println("10");
       line = 0; // Reset lines
 
       delay(DISPLAY_DATA_TIME); // Delay current display state
@@ -121,13 +125,14 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 
 // Get the next 20 characters (or up to space to prevent trunction)
 bool getNextLine(char* metarResult, uint16_t* pointerToText) {
-  Serial.print("Pointer value: ");
-  Serial.println((int)*pointerToText);
+  // Serial.print("Pointer value: ");
+  // Serial.println((int)*pointerToText);
+  // Serial.println("3");
 
   static bool lineBreakInProgress = false;
 
   // Fill reply array with spaces
-  for (uint8_t cnt = 0; cnt < 20; cnt++) {
+  for (uint8_t cnt = 0; cnt < MAX_CHARACTER_COUNT; cnt++) {
     reply[cnt] = ' ';
   }
 
@@ -136,13 +141,14 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
     return true;
   }
 
-  for (uint8_t cnt = 0; cnt < 20; cnt++) {
+  for (uint8_t cnt = 0; cnt < MAX_CHARACTER_COUNT; cnt++) {
     
     if(*pointerToText < strlen(allMyText)) {
       char myChar = pgm_read_byte_near(allMyText + *pointerToText);
 
       // increment pointer before we return
       (*pointerToText)++;
+      // Serial.println("4");
       
       // Deal with special characters (here, just new lines)
       if (myChar == DATA_END_SYMBOL) {
@@ -153,33 +159,37 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText) {
 
       reply[cnt] = myChar;
     } else {
+      // Serial.println("5");
       *pointerToText = 0;
       return false; // End of data, return dataAvailable = false
     }
   }
 
-  if (reply[19] == ' ') {
+  if (reply[(MAX_CHARACTER_COUNT-1)] == ' ') {
     return true; // Final char is a space
   }
 
   if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
+    // Serial.println("6");
     (*pointerToText)++;
     return true; // Next char is a space
   }
 
   // Track back to last space
-  for (uint8_t cnt = 18; cnt > 0; cnt--) {
+  for (uint8_t cnt = (MAX_CHARACTER_COUNT-2); cnt > 0; cnt--) {
     if (reply[cnt] == ' ') {
 
       // Space fill rest of line and decrement pointer for next line
-      for (uint8_t cnt2 = cnt; cnt2 < 20; cnt2++) {
+      for (uint8_t cnt2 = cnt; cnt2 < MAX_CHARACTER_COUNT; cnt2++) {
         reply[cnt2] = ' ';
+        // Serial.println("7");
         (*pointerToText)--;
       }
 
       // If the next character in the string (yet to be printed) is a space
       // increment the pointer so we don't start a line with a space
       if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
+        // Serial.println("8");
         (*pointerToText)++; // Next char is a space
       }
 
@@ -269,9 +279,11 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
     Serial.println("Metar count: " + currentMetarCount);
 
     // Save results
-    *metarSize = currentMetarCount;
+    // Serial.println("Metarsize pointer");
+    // *metarSize = currentMetarCount; // TODO, fix this action, crashes esp8266
     strcpy(metarResult, currentMetarRaw.c_str());
-    strcpy(conditionResult, currentCondition.c_str());  
+    strcpy(conditionResult, currentCondition.c_str());
+    // Serial.println("End of strcpy");
   }  
 }
 
@@ -301,7 +313,7 @@ void displayIpAddress() {
 
 void setOledSettings() {
   // Set display standards
-  oledDisplay.setFont(Arial14);
+  oledDisplay.setFont(DISPLAY_FONT);
   
   // oledDisplay.setRotation(0); // For debugging
   // oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
