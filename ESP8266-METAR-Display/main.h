@@ -16,8 +16,8 @@
 #include "SSD1306AsciiWire.h"
 
 // Function declaration
-void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize);
-void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int* metarSize);
+int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
+void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay);
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult);
 void setupOled();
 void setOledSettings();
@@ -41,12 +41,12 @@ const char DATA_END_SYMBOL = '%';
 #define DATA_REFRESH_DELAY 10000
 
 // Oled definitions
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
-#define OLED_RESET 1
-#define OLED_ADDR 0x3C
-#define SCL_PIN 0
-#define SDA_PIN 2
+const uint8_t SCREEN_WIDTH = 128;
+const uint8_t SCREEN_HEIGHT = 64;
+const uint8_t OLED_RESET = 1;
+const uint8_t OLED_ADDR = 0x3C;
+const uint8_t SCL_PIN = 0;
+const uint8_t SDA_PIN = 2;
 const uint8_t MAX_OLED_LINES = 4;
 
 // const uint8_t MAX_CHARACTER_COUNT = 20; // Max character count using font lcd5x7
