@@ -14,7 +14,7 @@ char reply[21];
 const char* HOME_BASE_AIRPORT = "EHLE";
 
 // Enable serial output showing code sequence
-const bool SERIAL_DEBUG_SEQUENCE_OUTPUT = true;
+const bool SERIAL_DEBUG_SEQUENCE_OUTPUT = false;
 
 void setup() {
   setupOled();
@@ -33,11 +33,13 @@ void loop() {
     
   metarSize = getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
 
-  displayMetarInfo(HOME_BASE_AIRPORT, metar, condition, metarSize, DISPLAY_DATA_TIME); // Show data on display
+  for(int i = 0; i < DISPLAY_METAR_ROTATIONS; i++) {
+    displayMetarInfo(HOME_BASE_AIRPORT, metar, condition, metarSize, DISPLAY_DATA_TIME); // Show data on display
 
-  printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
+    printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
+  }
 
-  delay(DATA_REFRESH_DELAY);
+  // delay(DATA_REFRESH_DELAY); // Delay integrated in displayMetarInfo();
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay) {
@@ -71,13 +73,13 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
   oledDisplay.clear();
   oledDisplay.home();
 
-  while (dataAvailable) {
+  while (dataAvailable) { // Data handler loop
     oledDisplay.clearToEOL();
 
     if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
       Serial.println("2");
 
-    dataAvailable = getNextLine(metarResult, pointerToTextPointer); // Grab new line, adjusted to display width
+    dataAvailable = getNextLine(metarResult, pointerToTextPointer, metarSize); // Grab new line, adjusted to display width
 
     if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
       Serial.println("9");
@@ -106,9 +108,10 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
 }
 
 // Get the next 20 characters (or up to space to prevent trunction)
-bool getNextLine(char* metarResult, uint16_t* pointerToText) {
+bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize) {
   // Serial.print("Pointer value: ");
   // Serial.println((int)*pointerToText);
+
   if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
     Serial.println("3");
 

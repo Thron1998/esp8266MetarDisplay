@@ -24,7 +24,7 @@ void setOledSettings();
 uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
-bool getNextLine(char* metarResult, uint16_t* pointerToText);
+bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize);
 void testScreen();
 
 // Serial definitions
@@ -54,6 +54,7 @@ const uint8_t MAX_OLED_LINES = 4;
 const int MAX_CHARACTER_COUNT = 16; // Test value
 
 const int DISPLAY_DATA_TIME = 5000;
+const int DISPLAY_METAR_ROTATIONS = 5;
 const uint8_t* DISPLAY_FONT = Arial14;
 /* Fonts to use:
 * Arial14
