@@ -38,8 +38,6 @@ void loop() {
 
     printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
   }
-
-  // delay(DATA_REFRESH_DELAY); // Delay integrated in displayMetarInfo();
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay) {
@@ -58,7 +56,7 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
    * https://www.vishay.com/docs/37902/oled128o064dbpp3n00000.pdf
    */
 
-  uint8_t line = 0;
+  uint8_t line = LINE_RESET_VALUE;
 
   // Pointer for index in text
   uint16_t pointerToText = 0;
@@ -73,6 +71,10 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
   oledDisplay.clear();
   oledDisplay.home();
 
+  // Display weather condition code
+  displayConditionCode(conditionResult, line);
+  line++;
+
   while (dataAvailable) { // Data handler loop
     oledDisplay.clearToEOL();
 
@@ -84,16 +86,20 @@ void displayMetarInfo(const char* airportCode, char* metarResult, char* conditio
     if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
       Serial.println("9");
     
+    Serial.print("{line ");
+    Serial.print(line);
+    Serial.print("} -- ");
+    Serial.print("display reply: ");
+    Serial.println(reply);    
+
     oledDisplay.println(reply);
-    Serial.println("Display reply:");
-    Serial.println(reply);
     
     if (line >= MAX_OLED_LINES) { // End of display is reached. Load new data into RAM
 
       if(SERIAL_DEBUG_SEQUENCE_OUTPUT)    
         Serial.println("10");
 
-      line = 0; // Reset lines
+      line = LINE_RESET_VALUE; // Reset lines
 
       delay(displayTextDelay); // Delay current display state
 
@@ -129,8 +135,8 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize) {
 
   for (uint8_t cnt = 0; cnt < MAX_CHARACTER_COUNT; cnt++) {
     
-    if(*pointerToText < strlen(allMyText)) {
-      char myChar = pgm_read_byte_near(allMyText + *pointerToText);
+    if(*pointerToText < metarSize) {
+      char myChar = metarResult[*pointerToText];
 
       // increment pointer before we return
       (*pointerToText)++;
@@ -160,7 +166,8 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize) {
     return true; // Final char is a space
   }
 
-  if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
+  // if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
+  if (metarResult[*pointerToText] == ' ') {
     
     if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
       Serial.println("6");
@@ -185,7 +192,7 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize) {
 
       // If the next character in the string (yet to be printed) is a space
       // increment the pointer so we don't start a line with a space
-      if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
+      if (metarResult[*pointerToText] == ' ') {
         
         if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
           Serial.println("8");
@@ -197,6 +204,18 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize) {
     }
   }
   return true;
+}
+
+void displayConditionCode(char* conditionResult, int line) {
+  Serial.print("{line ");
+  Serial.print(line);
+  Serial.print("} -- ");
+  Serial.print("display reply: ");
+  Serial.println(conditionResult);
+
+  oledDisplay.print("--- ");
+  oledDisplay.print(conditionResult);
+  oledDisplay.println(" ---");
 }
 
 int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
@@ -294,7 +313,7 @@ void displayStartupScreen() {
   // oledDisplay.clearDisplay();
   oledDisplay.clear();
 
-  oledDisplay.println("Metar info");
+  oledDisplay.println("Metar info:");
   oledDisplay.println(HOME_BASE_AIRPORT);
   
   // oledDisplay.display();    
