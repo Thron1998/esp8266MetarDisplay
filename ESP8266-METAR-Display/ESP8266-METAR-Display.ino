@@ -166,7 +166,6 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize) {
     return true; // Final char is a space
   }
 
-  // if (pgm_read_byte_near(allMyText + *pointerToText) == ' ') {
   if (metarResult[*pointerToText] == ' ') {
     
     if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
