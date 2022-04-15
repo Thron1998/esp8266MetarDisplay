@@ -32,11 +32,6 @@ void loop() {
   int metarSize;
 
   scanForClientPhone(ipAddressPhone); // Check if I'm in the house
-  // if(Ping.ping((192,168,2,47))) {
-  //   Serial.println("Computer is pinged!!!");
-  // } else {
-  //   Serial.println("Computer is unreachable");
-  // }
 
   adjustContrastForTime(); // Adjust contrast level to current time
     
@@ -52,10 +47,24 @@ void loop() {
 void scanForClientPhone(IPAddress addr) {
   // Scan for IP address of smartphone
   // If not available, client is not at home, disable display
-  if(Ping.ping(addr)) {
-    Serial.println("Client is online");
-  } else {
+  if(!Ping.ping(addr)) {
     Serial.println("Client is offline");
+    
+    // Disable screen to save oled
+    oledDisplay.clear();
+    oledDisplay.home();
+
+    Serial.println("Pinging client");
+    
+    while(!Ping.ping(addr)) {
+      Serial.print(".");
+      delay(500);
+    }
+
+    Serial.print("\n");
+
+  } else {
+    Serial.println("Client is online");
   }
 }
 
@@ -351,9 +360,6 @@ void displayIpAddress() {
 void setOledSettings() {
   // Set display standards
   oledDisplay.setFont(DISPLAY_FONT);
-
-  // Save screen from burnin
-  oledDisplay.setContrast(LOW_CONTRAST);
   
   // oledDisplay.setRotation(0); // For debugging
   // oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
@@ -409,7 +415,9 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
     }
 
     i++;
-  }  
+  }
+
+  Serial.print('\n');
 }
 
 void adjustContrastForTime() {
