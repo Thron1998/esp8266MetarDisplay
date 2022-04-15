@@ -42,6 +42,9 @@ const int BAUD_RATE = 115200;
 // Data definitions
 const char DATA_END_SYMBOL = '%';
 
+// NTP variables
+const uint8_t HOUR_ERROR_CODE = 0;
+
 // Phone definitions
 IPAddress ipAddressPhone(192, 168, 2, 168);
 

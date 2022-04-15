@@ -310,17 +310,14 @@ int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResu
       }
     }
 
-    // Debug values
     Serial.println("Received values");
     Serial.println("Raw metar: " + currentMetarRaw);
     Serial.println("Flight conditions: " + currentCondition);
     Serial.println("Metar count: " + currentMetarCount);
 
     // Save results
-    // Serial.println("Metarsize pointer");
     strcpy(metarResult, currentMetarRaw.c_str());
     strcpy(conditionResult, currentCondition.c_str());
-    // Serial.println("End of strcpy");
 
     // *metarSize = currentMetarCount; // TODO, fix this action, crashes esp8266
 
@@ -390,7 +387,7 @@ uint8_t setupWifi() {
   }
   Serial.print('\n');
 
-  return WiFi.status(); // Return status after setup
+  return WiFi.status();
 }
 
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult) {
@@ -430,15 +427,18 @@ void adjustContrastForTime() {
   Serial.print("Current hour: ");
   Serial.println(hour);
 
-  if(hour < HIGH_CONTRAST_HOUR_HIGH && hour > HIGH_CONTRAST_HOUR_LOW) {
-    // Day light period, high contrast
-    Serial.println("Set high contrast");
-    oledDisplay.setContrast(HIGH_CONTRAST);
-  } else {
-    // Night period, low contrast
-    Serial.println("Set low contrast");
-    oledDisplay.setContrast(LOW_CONTRAST);
+  if(hour != HOUR_ERROR_CODE) {
+    if(hour < HIGH_CONTRAST_HOUR_HIGH && hour > HIGH_CONTRAST_HOUR_LOW) {
+      // Day light period, high contrast
+      Serial.println("Set high contrast");
+      oledDisplay.setContrast(HIGH_CONTRAST);
+    } else {
+      // Night period, low contrast
+      Serial.println("Set low contrast");
+      oledDisplay.setContrast(LOW_CONTRAST);
+    }
   }
+  
 }
 
 int getCurrentHour() {
