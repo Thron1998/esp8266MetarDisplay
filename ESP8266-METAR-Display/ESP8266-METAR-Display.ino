@@ -30,6 +30,8 @@ void setup() {
 void loop() {
   char metar[500], condition[6];
   int metarSize;
+
+  adjustContrastForTime(); // Adjust contrast level to current time
     
   metarSize = getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
 
@@ -37,7 +39,7 @@ void loop() {
     displayMetarInfo(HOME_BASE_AIRPORT, metar, condition, metarSize, DISPLAY_DATA_TIME); // Show data on display
 
     printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
-  }
+  }  
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay) {
@@ -310,6 +312,7 @@ int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResu
 
 void displayStartupScreen() {
   oledDisplay.clear();
+  oledDisplay.home();
 
   oledDisplay.println("Metar info:");
   oledDisplay.println(HOME_BASE_AIRPORT);
@@ -318,6 +321,7 @@ void displayStartupScreen() {
 
 void displayIpAddress() {
   oledDisplay.clear();
+  oledDisplay.home();
   
   oledDisplay.setCursor(0,0);
   oledDisplay.print(WiFi.localIP());
@@ -330,6 +334,9 @@ void displayIpAddress() {
 void setOledSettings() {
   // Set display standards
   oledDisplay.setFont(DISPLAY_FONT);
+
+  // Save screen from burnin
+  oledDisplay.setContrast(LOW_CONTRAST);
   
   // oledDisplay.setRotation(0); // For debugging
   // oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
@@ -386,6 +393,30 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
 
     i++;
   }  
+}
+
+void adjustContrastForTime() {
+  // Time's based on UTC
+  int hour = getCurrentHour();
+
+  Serial.print("Current hour: ");
+  Serial.println(hour);
+
+  if(hour < HIGH_CONTRAST_HOUR_HIGH && hour > HIGH_CONTRAST_HOUR_LOW) {
+    // Day light period, high contrast
+    Serial.println("Set high contrast");
+    oledDisplay.setContrast(HIGH_CONTRAST);
+  } else {
+    // Night period, low contrast
+    Serial.println("Set low contrast");
+    oledDisplay.setContrast(LOW_CONTRAST);
+  }
+}
+
+int getCurrentHour() {
+  timeClient.update();
+
+  return timeClient.getHours();
 }
 
 // --------------------

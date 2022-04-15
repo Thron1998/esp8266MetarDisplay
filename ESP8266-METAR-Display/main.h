@@ -6,6 +6,8 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 #include "wifiCreds.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 // Old font library
 // #include <Adafruit_GFX.h>
@@ -26,6 +28,8 @@ uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
 bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize);
+void adjustContrastForTime();
+int getCurrentHour();
 void testScreen();
 
 // Serial definitions
@@ -33,6 +37,11 @@ const int BAUD_RATE = 115200;
 
 // Data definitions
 const char DATA_END_SYMBOL = '%';
+
+// Time definitions
+const long utcOffsetInSeconds = 0; // UTC time
+const int HIGH_CONTRAST_HOUR_LOW = 6; // These times are in UTC
+const int HIGH_CONTRAST_HOUR_HIGH = 18;
 
 // Server definitions
 #define SERVER "www.aviationweather.gov"
@@ -50,6 +59,8 @@ const uint8_t SCL_PIN = 0;
 const uint8_t SDA_PIN = 2;
 const uint8_t MAX_OLED_LINES = 4;
 const uint8_t LINE_RESET_VALUE = 1;
+const uint8_t HIGH_CONTRAST = 255;
+const uint8_t LOW_CONTRAST = 0;
 
 // const uint8_t MAX_CHARACTER_COUNT = 20; // Max character count using font lcd5x7
 // const int MAX_CHARACTER_COUNT = 9; // Max character count using font Arial14
@@ -67,6 +78,10 @@ const uint8_t* DISPLAY_FONT = Arial14;
  * X11fixed7x14
  * ZevvPeep8x16
 */
+
+// NTP object
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", utcOffsetInSeconds);
 
 // Wifi object
 WiFiClientSecure client;
