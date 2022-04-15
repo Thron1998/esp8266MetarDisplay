@@ -309,23 +309,18 @@ int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResu
 }
 
 void displayStartupScreen() {
-  // oledDisplay.clearDisplay();
   oledDisplay.clear();
 
   oledDisplay.println("Metar info:");
   oledDisplay.println(HOME_BASE_AIRPORT);
   
-  // oledDisplay.display();    
 }
 
 void displayIpAddress() {
-  // oledDisplay.clearDisplay();
   oledDisplay.clear();
   
   oledDisplay.setCursor(0,0);
   oledDisplay.print(WiFi.localIP());
-
-  // oledDisplay.display();
 
   // Debug
   Serial.print("IP addres: ");
@@ -344,7 +339,6 @@ void setupOled() {
   Wire.begin(SDA_PIN, SCL_PIN);
   Wire.setClock(400000L);
 
-  // oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
   oledDisplay.begin(&Adafruit128x64, OLED_ADDR, OLED_RESET);
 
   setOledSettings();
