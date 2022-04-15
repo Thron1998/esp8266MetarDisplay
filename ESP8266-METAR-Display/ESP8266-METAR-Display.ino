@@ -55,8 +55,17 @@ void scanForClientPhone(IPAddress addr) {
     oledDisplay.home();
 
     Serial.println("Pinging client");
-    
+
+    uint8_t timeOutCounter = 0;
+
     while(!Ping.ping(addr)) {
+      timeOutCounter++;
+
+      if(timeOutCounter > 5) {
+
+        timeOutCounter = 0;
+      }
+
       Serial.print(".");
       delay(500);
     }
@@ -69,21 +78,6 @@ void scanForClientPhone(IPAddress addr) {
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay) {
-  /*
-   * Code is written for a 128x32 oled display. Rewrite code
-   * for 128x64 oled display for it to work
-   * 
-   * Idea: fetch data from server, split data into packs of 128x64 pixels (4 rows) and display one by one
-   * To make more fluent: cut all packets in half, this will refresh the page with 2 rows at a time
-   * 
-   * The 128×64 OLED screen displays all the contents of RAM whereas 128×32 OLED screen displays only 4 pages (half content) of RAM.
-   * https://lastminuteengineers.com/oled-display-arduino-tutorial/
-   * Datasheet 1306
-   * https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
-   * Datasheet 128x64 oled
-   * https://www.vishay.com/docs/37902/oled128o064dbpp3n00000.pdf
-   */
-
   uint8_t line = LINE_RESET_VALUE;
 
   // Pointer for index in text
@@ -255,9 +249,10 @@ int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResu
   int currentMetarCount = 0;
       
   boolean readingCondition = false;
-  boolean readingMetarRaw = false;  
+  boolean readingMetarRaw = false;
 
   client.setInsecure();
+
   Serial.println("Starting connection to server...");
   if(!client.connect(SERVER, HTTPSPORT)) {
     Serial.println("Connection failed");
