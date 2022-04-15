@@ -374,6 +374,14 @@ void setupOled() {
 
 uint8_t setupWifi() {
   WiFi.mode(WIFI_STA);
+
+  disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected& event)
+  {
+    Serial.print("\n");
+    Serial.println("Station disconnected, trying to reconnect");
+    WiFi.begin(ssid, pass);
+  });  
+
   WiFi.begin(ssid, pass);
 
   while(WiFi.status() != WL_CONNECTED) {

@@ -33,6 +33,8 @@ bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize);
 void adjustContrastForTime();
 int getCurrentHour();
 void testScreen();
+// void Wifi_disconnected(WiFiEvent_t event, WiFiEventInfo_t info);
+// void Get_IPAddress(WiFiEvent_t event, WiFiEventInfo_t info);
 
 // Serial definitions
 const int BAUD_RATE = 115200;
@@ -83,6 +85,9 @@ const uint8_t* DISPLAY_FONT = Arial14;
  * X11fixed7x14
  * ZevvPeep8x16
 */
+
+// Wifi event handler object
+WiFiEventHandler disconnectedEventHandler;
 
 // NTP object
 WiFiUDP ntpUDP;
