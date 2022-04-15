@@ -381,11 +381,14 @@ uint8_t setupWifi() {
 
   WiFi.begin(ssid, pass);
 
+  Serial.print("\n");
+
   while(WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.print('\n');
+  
+  Serial.print("\n");
 
   return WiFi.status();
 }
@@ -438,7 +441,7 @@ void adjustContrastForTime() {
       oledDisplay.setContrast(LOW_CONTRAST);
     }
   }
-  
+
 }
 
 int getCurrentHour() {
