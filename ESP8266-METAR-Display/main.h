@@ -4,6 +4,7 @@
 // #include "font.h"
 #include "images.h"
 #include <ESP8266WiFi.h>
+#include <ESP8266Ping.h>
 #include <WiFiClientSecure.h>
 #include "wifiCreds.h"
 #include <NTPClient.h>
@@ -18,6 +19,7 @@
 #include "SSD1306AsciiWire.h"
 
 // Function declaration
+void scanForClientPhone(IPAddress addr);
 int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay);
 void displayConditionCode(char* conditionResult, int line);
@@ -37,6 +39,9 @@ const int BAUD_RATE = 115200;
 
 // Data definitions
 const char DATA_END_SYMBOL = '%';
+
+// Phone definitions
+IPAddress ipAddressPhone(192, 168, 2, 168);
 
 // Time definitions
 const long utcOffsetInSeconds = 0; // UTC time

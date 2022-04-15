@@ -31,6 +31,13 @@ void loop() {
   char metar[500], condition[6];
   int metarSize;
 
+  scanForClientPhone(ipAddressPhone); // Check if I'm in the house
+  // if(Ping.ping((192,168,2,47))) {
+  //   Serial.println("Computer is pinged!!!");
+  // } else {
+  //   Serial.println("Computer is unreachable");
+  // }
+
   adjustContrastForTime(); // Adjust contrast level to current time
     
   metarSize = getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
@@ -40,6 +47,16 @@ void loop() {
 
     printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
   }  
+}
+
+void scanForClientPhone(IPAddress addr) {
+  // Scan for IP address of smartphone
+  // If not available, client is not at home, disable display
+  if(Ping.ping(addr)) {
+    Serial.println("Client is online");
+  } else {
+    Serial.println("Client is offline");
+  }
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay) {
