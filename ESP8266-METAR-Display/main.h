@@ -18,6 +18,7 @@
 // Function declaration
 int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay);
+void displayConditionCode(char* conditionResult, int line);
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult);
 void setupOled();
 void setOledSettings();
@@ -48,6 +49,7 @@ const uint8_t OLED_ADDR = 0x3C;
 const uint8_t SCL_PIN = 0;
 const uint8_t SDA_PIN = 2;
 const uint8_t MAX_OLED_LINES = 4;
+const uint8_t LINE_RESET_VALUE = 1;
 
 // const uint8_t MAX_CHARACTER_COUNT = 20; // Max character count using font lcd5x7
 // const int MAX_CHARACTER_COUNT = 9; // Max character count using font Arial14
