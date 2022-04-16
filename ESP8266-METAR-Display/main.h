@@ -4,8 +4,11 @@
 // #include "font.h"
 #include "images.h"
 #include <ESP8266WiFi.h>
+#include <ESP8266Ping.h>
 #include <WiFiClientSecure.h>
 #include "wifiCreds.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 // Old font library
 // #include <Adafruit_GFX.h>
@@ -16,6 +19,7 @@
 #include "SSD1306AsciiWire.h"
 
 // Function declaration
+void scanForClientPhone(IPAddress addr);
 int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult);
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay);
 void displayConditionCode(char* conditionResult, int line);
@@ -26,13 +30,28 @@ uint8_t setupWifi();
 void displayStartupScreen();
 void displayIpAddress();
 bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize);
+void adjustContrastForTime();
+int getCurrentHour();
 void testScreen();
+// void Wifi_disconnected(WiFiEvent_t event, WiFiEventInfo_t info);
+// void Get_IPAddress(WiFiEvent_t event, WiFiEventInfo_t info);
 
 // Serial definitions
 const int BAUD_RATE = 115200;
 
 // Data definitions
 const char DATA_END_SYMBOL = '%';
+
+// NTP variables
+const uint8_t HOUR_ERROR_CODE = 0;
+
+// Phone definitions
+IPAddress ipAddressPhone(192, 168, 2, 168);
+
+// Time definitions
+const long utcOffsetInSeconds = 0; // UTC time
+const int HIGH_CONTRAST_HOUR_LOW = 6; // These times are in UTC
+const int HIGH_CONTRAST_HOUR_HIGH = 18;
 
 // Server definitions
 #define SERVER "www.aviationweather.gov"
@@ -50,6 +69,9 @@ const uint8_t SCL_PIN = 0;
 const uint8_t SDA_PIN = 2;
 const uint8_t MAX_OLED_LINES = 4;
 const uint8_t LINE_RESET_VALUE = 1;
+const uint8_t HIGH_CONTRAST = 255;
+const uint8_t LOW_CONTRAST = 0;
+const bool ROTATE_IMAGE_180 = true;
 
 // const uint8_t MAX_CHARACTER_COUNT = 20; // Max character count using font lcd5x7
 // const int MAX_CHARACTER_COUNT = 9; // Max character count using font Arial14
@@ -67,6 +89,13 @@ const uint8_t* DISPLAY_FONT = Arial14;
  * X11fixed7x14
  * ZevvPeep8x16
 */
+
+// Wifi event handler object
+WiFiEventHandler disconnectedEventHandler;
+
+// NTP object
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", utcOffsetInSeconds);
 
 // Wifi object
 WiFiClientSecure client;

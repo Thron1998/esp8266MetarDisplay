@@ -30,6 +30,10 @@ void setup() {
 void loop() {
   char metar[500], condition[6];
   int metarSize;
+
+  scanForClientPhone(ipAddressPhone); // Check if I'm in the house
+
+  adjustContrastForTime(); // Adjust contrast level to current time
     
   metarSize = getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
 
@@ -37,25 +41,43 @@ void loop() {
     displayMetarInfo(HOME_BASE_AIRPORT, metar, condition, metarSize, DISPLAY_DATA_TIME); // Show data on display
 
     printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
+  }  
+}
+
+void scanForClientPhone(IPAddress addr) {
+  // Scan for IP address of smartphone
+  // If not available, client is not at home, disable display
+  if(!Ping.ping(addr)) {
+    Serial.println("Client is offline");
+    
+    // Disable screen to save oled
+    oledDisplay.clear();
+    oledDisplay.home();
+
+    Serial.println("Pinging client");
+
+    uint8_t timeOutCounter = 0;
+
+    while(!Ping.ping(addr)) {
+      timeOutCounter++;
+
+      if(timeOutCounter > 5) {
+
+        timeOutCounter = 0;
+      }
+
+      Serial.print(".");
+      delay(500);
+    }
+
+    Serial.print("\n");
+
+  } else {
+    Serial.println("Client is online");
   }
 }
 
 void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay) {
-  /*
-   * Code is written for a 128x32 oled display. Rewrite code
-   * for 128x64 oled display for it to work
-   * 
-   * Idea: fetch data from server, split data into packs of 128x64 pixels (4 rows) and display one by one
-   * To make more fluent: cut all packets in half, this will refresh the page with 2 rows at a time
-   * 
-   * The 128×64 OLED screen displays all the contents of RAM whereas 128×32 OLED screen displays only 4 pages (half content) of RAM.
-   * https://lastminuteengineers.com/oled-display-arduino-tutorial/
-   * Datasheet 1306
-   * https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
-   * Datasheet 128x64 oled
-   * https://www.vishay.com/docs/37902/oled128o064dbpp3n00000.pdf
-   */
-
   uint8_t line = LINE_RESET_VALUE;
 
   // Pointer for index in text
@@ -227,9 +249,10 @@ int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResu
   int currentMetarCount = 0;
       
   boolean readingCondition = false;
-  boolean readingMetarRaw = false;  
+  boolean readingMetarRaw = false;
 
   client.setInsecure();
+
   Serial.println("Starting connection to server...");
   if(!client.connect(SERVER, HTTPSPORT)) {
     Serial.println("Connection failed");
@@ -287,17 +310,14 @@ int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResu
       }
     }
 
-    // Debug values
     Serial.println("Received values");
     Serial.println("Raw metar: " + currentMetarRaw);
     Serial.println("Flight conditions: " + currentCondition);
     Serial.println("Metar count: " + currentMetarCount);
 
     // Save results
-    // Serial.println("Metarsize pointer");
     strcpy(metarResult, currentMetarRaw.c_str());
     strcpy(conditionResult, currentCondition.c_str());
-    // Serial.println("End of strcpy");
 
     // *metarSize = currentMetarCount; // TODO, fix this action, crashes esp8266
 
@@ -309,23 +329,20 @@ int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResu
 }
 
 void displayStartupScreen() {
-  // oledDisplay.clearDisplay();
   oledDisplay.clear();
+  oledDisplay.home();
 
   oledDisplay.println("Metar info:");
   oledDisplay.println(HOME_BASE_AIRPORT);
   
-  // oledDisplay.display();    
 }
 
 void displayIpAddress() {
-  // oledDisplay.clearDisplay();
   oledDisplay.clear();
+  oledDisplay.home();
   
   oledDisplay.setCursor(0,0);
   oledDisplay.print(WiFi.localIP());
-
-  // oledDisplay.display();
 
   // Debug
   Serial.print("IP addres: ");
@@ -336,15 +353,13 @@ void setOledSettings() {
   // Set display standards
   oledDisplay.setFont(DISPLAY_FONT);
   
-  // oledDisplay.setRotation(0); // For debugging
-  // oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
+  oledDisplay.displayRemap(ROTATE_IMAGE_180);
 }
 
 void setupOled() {
   Wire.begin(SDA_PIN, SCL_PIN);
   Wire.setClock(400000L);
 
-  // oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
   oledDisplay.begin(&Adafruit128x64, OLED_ADDR, OLED_RESET);
 
   setOledSettings();
@@ -355,15 +370,26 @@ void setupOled() {
 
 uint8_t setupWifi() {
   WiFi.mode(WIFI_STA);
+
+  disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected& event)
+  {
+    Serial.print("\n");
+    Serial.println("Station disconnected, trying to reconnect");
+    WiFi.begin(ssid, pass);
+  });  
+
   WiFi.begin(ssid, pass);
+
+  Serial.print("\n");
 
   while(WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.print('\n');
+  
+  Serial.print("\n");
 
-  return WiFi.status(); // Return status after setup
+  return WiFi.status();
 }
 
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult) {
@@ -391,7 +417,36 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
     }
 
     i++;
-  }  
+  }
+
+  Serial.print('\n');
+}
+
+void adjustContrastForTime() {
+  // Time's based on UTC
+  int hour = getCurrentHour();
+
+  Serial.print("Current hour: ");
+  Serial.println(hour);
+
+  if(hour != HOUR_ERROR_CODE) {
+    if(hour < HIGH_CONTRAST_HOUR_HIGH && hour > HIGH_CONTRAST_HOUR_LOW) {
+      // Day light period, high contrast
+      Serial.println("Set high contrast");
+      oledDisplay.setContrast(HIGH_CONTRAST);
+    } else {
+      // Night period, low contrast
+      Serial.println("Set low contrast");
+      oledDisplay.setContrast(LOW_CONTRAST);
+    }
+  }
+
+}
+
+int getCurrentHour() {
+  timeClient.update();
+
+  return timeClient.getHours();
 }
 
 // --------------------
