@@ -8,14 +8,18 @@
 #include "main.h"
 #include "errorCodes.h"
 
-// #define HOME_BASE_AIRPORT "EHLE"
+// Buffer to print line on oled display
+char reply[21];
+
 const char* HOME_BASE_AIRPORT = "EHLE";
+
+// Enable serial output showing code sequence
+const bool SERIAL_DEBUG_SEQUENCE_OUTPUT = false;
 
 void setup() {
   setupOled();
-  delay(100);
  
-  Serial.begin(115200);
+  Serial.begin(BAUD_RATE);
 
   setupWifi();
 
@@ -25,51 +29,230 @@ void setup() {
 
 void loop() {
   char metar[500], condition[6];
+  int metarSize;
+
+  scanForClientPhone(ipAddressPhone); // Check if I'm in the house
+
+  adjustContrastForTime(); // Adjust contrast level to current time
     
-  getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
+  metarSize = getMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Fetch data from server
 
-  displayMetarInfo(HOME_BASE_AIRPORT, metar, condition); // Show data on display
+  for(int i = 0; i < DISPLAY_METAR_ROTATIONS; i++) {
+    displayMetarInfo(HOME_BASE_AIRPORT, metar, condition, metarSize, DISPLAY_DATA_TIME); // Show data on display
 
-  printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
-
-  delay(DATA_REFRESH_DELAY);
+    printMetarInfoDebug(HOME_BASE_AIRPORT, metar, condition); // Show data on serial monitor
+  }  
 }
 
-void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
-  oledDisplay.clearDisplay();
+void scanForClientPhone(IPAddress addr) {
+  // Scan for IP address of smartphone
+  // If not available, client is not at home, disable display
+  if(!Ping.ping(addr)) {
+    Serial.println("Client is offline");
+    
+    // Disable screen to save oled
+    oledDisplay.clear();
+    oledDisplay.home();
 
-  oledDisplay.setCursor(0,0);
-  oledDisplay.print("---");
-  oledDisplay.print(String(conditionResult));
-  oledDisplay.println("---");
+    Serial.println("Pinging client");
 
-  // Print metar results
-  oledDisplay.print(String(metarResult));
+    uint8_t timeOutCounter = 0;
 
-  oledDisplay.display();
+    while(!Ping.ping(addr)) {
+      timeOutCounter++;
+
+      if(timeOutCounter > 5) {
+
+        timeOutCounter = 0;
+      }
+
+      Serial.print(".");
+      delay(500);
+    }
+
+    Serial.print("\n");
+
+  } else {
+    Serial.println("Client is online");
+  }
 }
 
+void displayMetarInfo(const char* airportCode, char* metarResult, char* conditionResult, int metarSize, int displayTextDelay) {
+  uint8_t line = LINE_RESET_VALUE;
 
-void scrollText() {
+  // Pointer for index in text
+  uint16_t pointerToText = 0;
+  uint16_t* pointerToTextPointer = &pointerToText;
 
+  if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+    Serial.println("1");
+  
+  bool dataAvailable = true;
+
+  // Reset display
+  oledDisplay.clear();
+  oledDisplay.home();
+
+  // Display weather condition code
+  displayConditionCode(conditionResult, line);
+  line++;
+
+  while (dataAvailable) { // Data handler loop
+    oledDisplay.clearToEOL();
+
+    if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+      Serial.println("2");
+
+    dataAvailable = getNextLine(metarResult, pointerToTextPointer, metarSize); // Grab new line, adjusted to display width
+
+    if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+      Serial.println("9");
+    
+    Serial.print("{line ");
+    Serial.print(line);
+    Serial.print("} -- ");
+    Serial.print("display reply: ");
+    Serial.println(reply);    
+
+    oledDisplay.println(reply);
+    
+    if (line >= MAX_OLED_LINES) { // End of display is reached. Load new data into RAM
+
+      if(SERIAL_DEBUG_SEQUENCE_OUTPUT)    
+        Serial.println("10");
+
+      line = LINE_RESET_VALUE; // Reset lines
+
+      delay(displayTextDelay); // Delay current display state
+
+      oledDisplay.home();
+      oledDisplay.clear(); // Reset display for new data
+    } else {
+      line++;
+    }
+  }
+
+  delay(displayTextDelay); // Add delay so last array of data doesn't dissapear instantly
 }
 
-bool getNextLine() {
+// Get the next 20 characters (or up to space to prevent trunction)
+bool getNextLine(char* metarResult, uint16_t* pointerToText, int metarSize) {
+  // Serial.print("Pointer value: ");
+  // Serial.println((int)*pointerToText);
 
+  if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+    Serial.println("3");
+
+  static bool lineBreakInProgress = false;
+
+  // Fill reply array with spaces
+  for (uint8_t cnt = 0; cnt < MAX_CHARACTER_COUNT; cnt++) {
+    reply[cnt] = ' ';
+  }
+
+  if (lineBreakInProgress) {
+    lineBreakInProgress = false;
+    return true;
+  }
+
+  for (uint8_t cnt = 0; cnt < MAX_CHARACTER_COUNT; cnt++) {
+    
+    if(*pointerToText < metarSize) {
+      char myChar = metarResult[*pointerToText];
+
+      // increment pointer before we return
+      (*pointerToText)++;
+      
+      if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+        Serial.println("4");
+      
+      // Deal with special characters (here, just new lines)
+      if (myChar == DATA_END_SYMBOL) {
+        // Set the flag that we have a line-break situation
+        lineBreakInProgress = true;
+        return true;
+      }
+
+      reply[cnt] = myChar;
+    } else {
+
+      if(SERIAL_DEBUG_SEQUENCE_OUTPUT)  
+        Serial.println("5");
+
+      *pointerToText = 0;
+      return false; // End of data, return dataAvailable = false
+    }
+  }
+
+  if (reply[(MAX_CHARACTER_COUNT-1)] == ' ') {
+    return true; // Final char is a space
+  }
+
+  if (metarResult[*pointerToText] == ' ') {
+    
+    if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+      Serial.println("6");
+
+    (*pointerToText)++;
+    return true; // Next char is a space
+  }
+
+  // Track back to last space
+  for (uint8_t cnt = (MAX_CHARACTER_COUNT-2); cnt > 0; cnt--) {
+    if (reply[cnt] == ' ') {
+
+      // Space fill rest of line and decrement pointer for next line
+      for (uint8_t cnt2 = cnt; cnt2 < MAX_CHARACTER_COUNT; cnt2++) {
+        reply[cnt2] = ' ';
+        
+        if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+          Serial.println("7");
+        
+        (*pointerToText)--;
+      }
+
+      // If the next character in the string (yet to be printed) is a space
+      // increment the pointer so we don't start a line with a space
+      if (metarResult[*pointerToText] == ' ') {
+        
+        if(SERIAL_DEBUG_SEQUENCE_OUTPUT)
+          Serial.println("8");
+
+        (*pointerToText)++; // Next char is a space
+      }
+
+      break; // Last space was found, break from for loop
+    }
+  }
+  return true;
 }
 
-void getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
+void displayConditionCode(char* conditionResult, int line) {
+  Serial.print("{line ");
+  Serial.print(line);
+  Serial.print("} -- ");
+  Serial.print("display reply: ");
+  Serial.println(conditionResult);
+
+  oledDisplay.print("--- ");
+  oledDisplay.print(conditionResult);
+  oledDisplay.println(" ---");
+}
+
+int getMetarInfo(const char* airportCode, char* metarResult, char* conditionResult) {
   const char* airportString = airportCode;
   char c;
 
   String currentCondition = "";
   String currentMetarRaw = "";
   String currentLine = "";
+  int currentMetarCount = 0;
       
   boolean readingCondition = false;
-  boolean readingMetarRaw = false;  
+  boolean readingMetarRaw = false;
 
   client.setInsecure();
+
   Serial.println("Starting connection to server...");
   if(!client.connect(SERVER, HTTPSPORT)) {
     Serial.println("Connection failed");
@@ -127,37 +310,39 @@ void getMetarInfo(const char* airportCode, char* metarResult, char* conditionRes
       }
     }
 
-    // --------------
-    // TODO: add end character to end of string received
-
-    // --------------
-
-    // Debug values
     Serial.println("Received values");
     Serial.println("Raw metar: " + currentMetarRaw);
     Serial.println("Flight conditions: " + currentCondition);
+    Serial.println("Metar count: " + currentMetarCount);
 
     // Save results
     strcpy(metarResult, currentMetarRaw.c_str());
-    strcpy(conditionResult, currentCondition.c_str());    
+    strcpy(conditionResult, currentCondition.c_str());
+
+    // *metarSize = currentMetarCount; // TODO, fix this action, crashes esp8266
+
+    // Get metar string length
+    currentMetarCount = currentMetarRaw.length();
+
+    return currentMetarCount;
   }  
 }
 
 void displayStartupScreen() {
-  oledDisplay.clearDisplay();
-  oledDisplay.println("Metar info");
+  oledDisplay.clear();
+  oledDisplay.home();
+
+  oledDisplay.println("Metar info:");
   oledDisplay.println(HOME_BASE_AIRPORT);
   
-  oledDisplay.display();    
 }
 
 void displayIpAddress() {
-  oledDisplay.clearDisplay();
+  oledDisplay.clear();
+  oledDisplay.home();
   
   oledDisplay.setCursor(0,0);
   oledDisplay.print(WiFi.localIP());
-
-  oledDisplay.display();
 
   // Debug
   Serial.print("IP addres: ");
@@ -166,33 +351,45 @@ void displayIpAddress() {
 
 void setOledSettings() {
   // Set display standards
-  // oledDisplay.setFont(&Dialog_plain_9);
-  // oledDisplay.setFont(&Dialog_plain_12);
-
-  oledDisplay.setTextColor(WHITE);
-  // oledDisplay.setRotation(0); // For debugging
-  oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
+  oledDisplay.setFont(DISPLAY_FONT);
+  
+  oledDisplay.displayRemap(ROTATE_IMAGE_180);
 }
 
 void setupOled() {
   Wire.begin(SDA_PIN, SCL_PIN);
-  oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+  Wire.setClock(400000L);
+
+  oledDisplay.begin(&Adafruit128x64, OLED_ADDR, OLED_RESET);
 
   setOledSettings();
-  displayStartupScreen(); 
+  displayStartupScreen();
+
+  delay(100);
 }
 
 uint8_t setupWifi() {
   WiFi.mode(WIFI_STA);
+
+  disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected& event)
+  {
+    Serial.print("\n");
+    Serial.println("Station disconnected, trying to reconnect");
+    WiFi.begin(ssid, pass);
+  });  
+
   WiFi.begin(ssid, pass);
+
+  Serial.print("\n");
 
   while(WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.print('\n');
+  
+  Serial.print("\n");
 
-  return WiFi.status(); // Return status after setup
+  return WiFi.status();
 }
 
 void printMetarInfoDebug(const char* airportCode, char* metarResult, char* conditionResult) {
@@ -220,17 +417,52 @@ void printMetarInfoDebug(const char* airportCode, char* metarResult, char* condi
     }
 
     i++;
-  }  
+  }
+
+  Serial.print('\n');
 }
+
+void adjustContrastForTime() {
+  // Time's based on UTC
+  int hour = getCurrentHour();
+
+  Serial.print("Current hour: ");
+  Serial.println(hour);
+
+  if(hour != HOUR_ERROR_CODE) {
+    if(hour < HIGH_CONTRAST_HOUR_HIGH && hour > HIGH_CONTRAST_HOUR_LOW) {
+      // Day light period, high contrast
+      Serial.println("Set high contrast");
+      oledDisplay.setContrast(HIGH_CONTRAST);
+    } else {
+      // Night period, low contrast
+      Serial.println("Set low contrast");
+      oledDisplay.setContrast(LOW_CONTRAST);
+    }
+  }
+
+}
+
+int getCurrentHour() {
+  timeClient.update();
+
+  return timeClient.getHours();
+}
+
+// --------------------
+// TEST SECTION
+// --------------------
 
 void testScreen() {
   // Test display!
+  /*
   Wire.begin(SDA_PIN, SCL_PIN);
   oledDisplay.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
 
-  // oledDisplay.setFont(&Dialog_plain_9);
-  // oledDisplay.setFont(&Dialog_plain_12);
+  oledDisplay.setFont(&Dialog_plain_9);
+  oledDisplay.setFont(&Dialog_plain_12);
 
   oledDisplay.setTextColor(WHITE);
   oledDisplay.setRotation(0); // For debugging
+  */
 }

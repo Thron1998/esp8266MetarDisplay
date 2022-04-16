@@ -3,6 +3,6 @@
  * 
  */
 
-#if(SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
+// #if(SSD1306_LCDHEIGHT != 64)
+// #error("Height incorrect, please fix Adafruit_SSD1306.h!");
+// #endif
