@@ -71,6 +71,7 @@ const uint8_t MAX_OLED_LINES = 4;
 const uint8_t LINE_RESET_VALUE = 1;
 const uint8_t HIGH_CONTRAST = 255;
 const uint8_t LOW_CONTRAST = 0;
+const bool ROTATE_IMAGE_180 = true;
 
 // const uint8_t MAX_CHARACTER_COUNT = 20; // Max character count using font lcd5x7
 // const int MAX_CHARACTER_COUNT = 9; // Max character count using font Arial14

@@ -353,8 +353,7 @@ void setOledSettings() {
   // Set display standards
   oledDisplay.setFont(DISPLAY_FONT);
   
-  // oledDisplay.setRotation(0); // For debugging
-  // oledDisplay.setRotation(2); // Rotate screen 90 degrees (for final product)
+  oledDisplay.displayRemap(ROTATE_IMAGE_180);
 }
 
 void setupOled() {
